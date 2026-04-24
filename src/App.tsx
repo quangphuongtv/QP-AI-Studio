@@ -825,9 +825,10 @@ export default function App() {
 
       // Handle Image or Frame input for Veo
       if ((job.inputType === 'image' || job.inputType === 'frame') && job.inputImage) {
+        const mimeType = job.inputImage.split(';')[0].split(':')[1] || 'image/png';
         videoParams.image = {
           imageBytes: job.inputImage.split(',')[1],
-          mimeType: 'image/png'
+          mimeType: mimeType
         };
       }
 
@@ -902,6 +903,11 @@ export default function App() {
 
     const prompts = bulkPrompts.split('\n').map(p => p.trim()).filter(p => p.length > 0);
     if (prompts.length === 0) return;
+
+    if ((newJobSettings.inputType === 'image' || newJobSettings.inputType === 'frame') && !newJobSettings.inputImage) {
+      alert('Vui lòng upload ảnh tham chiếu cho chế độ IMAGE hoặc FRAME.');
+      return;
+    }
 
     const newJobs: VideoJob[] = prompts.map((prompt, i) => ({
       id: `job-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
@@ -1331,7 +1337,7 @@ Nội dung văn bản:
           </div>
 
           {/* Menu Bar Row */}
-          <nav className="w-full h-[60px] bg-secondary-bg/50 backdrop-blur-md border-b border-border-subtle px-[30px] py-0 flex items-center justify-between">
+          <nav className="w-full h-[60px] bg-secondary-bg/50 backdrop-blur-md border-b border-border-subtle px-[50px] py-0 flex items-center justify-between">
             <div className="flex gap-6 overflow-x-auto no-scrollbar py-[10px]">
               {sections.map((section) => (
                 <motion.button
@@ -2155,6 +2161,7 @@ Nội dung văn bản:
                             <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
                               <MessageCircle size={14} /> Select Voice (Gemini Pro)
                             </label>
+
                             <div className="flex gap-2">
                               <div className="relative flex-1">
                                 <select 
@@ -2439,11 +2446,17 @@ Nội dung văn bản:
                       <div className="space-y-4">
                         {/* Bulk Prompts Area */}
                         <div>
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2 block font-mono">Prompts List (One per line)</label>
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2 block font-mono">
+                            {newJobSettings.inputType === 'text' ? 'Prompts List (One per line)' : 'Movement/Story Prompt (Combined with Image)'}
+                          </label>
                           <textarea 
                             value={bulkPrompts}
                             onChange={(e) => setBulkPrompts(e.target.value)}
-                            placeholder="A sunset over Mars...&#10;Cyberpunk city flyover...&#10;Ancient ruins in the jungle..."
+                            placeholder={
+                              newJobSettings.inputType === 'text' 
+                                ? "A sunset over Mars...&#10;Cyberpunk city flyover..." 
+                                : "Describe how the image should move...&#10;Make the character wave...&#10;Slowly zoom into the eyes..."
+                            }
                             className="w-full h-64 bg-black/40 border border-border-subtle rounded-lg p-4 text-sm text-white focus:outline-none focus:border-accent resize-none custom-scrollbar font-sans"
                           />
                         </div>
