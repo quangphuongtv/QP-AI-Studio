@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700;800&family=Caveat:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-brush: "Caveat", cursive;
+  
+  --color-main-bg: #505050;
+  --color-secondary-bg: #303030;
+  --color-section-bg: #303030;
+  --color-title-bg: #303030;
+  --color-accent: #EE8800;
+  --color-border-subtle: rgba(248, 249, 250, 0.2);
+  --color-text-primary: #CCCCCC;
+  --color-text-dark: #030303;
+}
+
+@layer base {
+  body {
+    @apply bg-main-bg text-text-primary font-sans;
+    min-width: 1260px;
+  }
+}
+
+@layer utilities {
+  .cold-blue-glow {
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+    transition: all 0.3s ease;
+  }
+  
+  .cold-blue-glow:hover {
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.8);
+    border-color: rgba(0, 212, 255, 0.5);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  }
+
+  .module-badge {
+    @apply inline-block px-2.5 py-1 bg-title-bg border border-accent rounded text-[11px] font-bold text-white uppercase;
+  }
+
+  .neon-glow-text {
+    text-shadow: 0 0 10px rgba(238, 136, 0, 0.8), 0 0 20px rgba(238, 136, 0, 0.4), 0 0 30px rgba(238, 136, 0, 0.2);
+  }
+
+  .tech-blue-glow {
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+
+  .tech-blue-border {
+    border-color: rgba(0, 212, 255, 0.2);
+  }
+
+  .tech-blue-border:focus {
+    border-color: rgba(0, 212, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+  }
+
+  @keyframes shimmer-flow {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .animate-glow-flow {
+    background: linear-gradient(90deg, transparent, rgba(238, 136, 0, 0.3), transparent);
+    background-size: 200% 100%;
+    animation: shimmer-flow 3s infinite linear;
+  }
+
+  @keyframes neon-pulse {
+    0%, 100% { box-shadow: 0 0 15px rgba(238, 136, 0, 0.4), inset 0 0 5px rgba(238, 136, 0, 0.2); }
+    50% { box-shadow: 0 0 35px rgba(238, 136, 0, 0.7), inset 0 0 15px rgba(238, 136, 0, 0.4); }
+  }
+
+  .neon-glow-button {
+    animation: neon-pulse 2s infinite ease-in-out;
+  }
+}
