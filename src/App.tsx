@@ -185,6 +185,14 @@ interface VideoJob {
   completedAt?: number;
 }
 
+interface ConversationNode {
+  id: string;
+  speaker: string;
+  text: string;
+  style?: string;
+  region?: string;
+}
+
 export default function App() {
   const [sections, setSections] = useState<Section[]>([
     { id: 'prompt', title: 'Prompt Generator' },
@@ -264,6 +272,11 @@ export default function App() {
   const [isTtsProcessing, setIsTtsProcessing] = useState(false);
   const [ttsAudioUrl, setTtsAudioUrl] = useState<string | null>(null);
   const [ttsProgress, setTtsProgress] = useState(0);
+  const [ttsMode, setTtsMode] = useState<'single' | 'multiple'>('single');
+  const [conversationNodes, setConversationNodes] = useState<ConversationNode[]>([
+    { id: 'node-1', speaker: 'Zephyr', text: '', style: 'Calm/Serene (Bình thản)', region: 'Default' },
+    { id: 'node-2', speaker: 'Puck', text: '', style: 'Calm/Serene (Bình thản)', region: 'Default' },
+  ]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const ttsAiModels = [
@@ -601,6 +614,27 @@ export default function App() {
       }
     };
     input.click();
+  };
+
+  const addConversationNode = () => {
+    const lastNode = conversationNodes[conversationNodes.length - 1];
+    const newSpeaker = lastNode ? (lastNode.speaker === 'Zephyr' ? 'Puck' : 'Zephyr') : 'Zephyr';
+    setConversationNodes([...conversationNodes, { 
+      id: `node-${Date.now()}`, 
+      speaker: newSpeaker, 
+      text: '', 
+      style: ttsStyle,
+      region: ttsRegion
+    }]);
+  };
+
+  const removeConversationNode = (id: string) => {
+    if (conversationNodes.length <= 1) return;
+    setConversationNodes(conversationNodes.filter(n => n.id !== id));
+  };
+
+  const updateConversationNode = (id: string, updates: Partial<ConversationNode>) => {
+    setConversationNodes(conversationNodes.map(n => n.id === id ? { ...n, ...updates } : n));
   };
 
   const handleGenerate = async () => {
@@ -957,20 +991,25 @@ export default function App() {
     return { usd: usd.toFixed(4), vnd: Math.round(vnd).toLocaleString('vi-VN') };
   };
 
-  const callGeminiTtsApi = async (text: string) => {
+  const callGeminiTtsApi = async (text: string, overrideVoice?: string, overrideStyle?: string, overrideRegion?: string) => {
     const ai = new GoogleGenAI({ apiKey: getEffectiveApiKey() });
     
+    // Choose voice, style and region
+    const activeVoice = overrideVoice || geminiVoice;
+    const activeStyle = overrideStyle || ttsStyle;
+    const activeRegion = overrideRegion || ttsRegion;
+
     // Tạo prompt mô tả giọng điệu vùng miền
     let regionPrompt = '';
-    if (ttsRegion === 'Default') {
+    if (activeRegion === 'Default') {
       regionPrompt = 'Giọng đọc gốc, tự nhiên nhất của AI.';
-    } else if (ttsRegion === 'North') {
+    } else if (activeRegion === 'North') {
       regionPrompt = 'Giọng Hà Nội, miền Bắc Việt Nam chuẩn.';
-    } else if (ttsRegion === 'Hue') {
+    } else if (activeRegion === 'Hue') {
       regionPrompt = 'Giọng Huế, miền Trung Việt Nam đặc trưng.';
-    } else if (ttsRegion === 'Central') {
+    } else if (activeRegion === 'Central') {
       regionPrompt = 'Giọng Bình Định và Phú Yên, miền Trung Việt Nam.';
-    } else if (ttsRegion === 'South') {
+    } else if (activeRegion === 'South') {
       regionPrompt = 'Giọng Cà Mau, miền Tây Nam Bộ Việt Nam.';
     }
 
@@ -978,12 +1017,12 @@ export default function App() {
     const pitchText = ttsPitch === 0 ? 'tông giọng trung bình' : `tông giọng (độ cao) ${ttsPitch > 0 ? '+' : ''}${ttsPitch}`;
     
     const fullPrompt = `Hãy đóng vai là một người kể chuyện chuyên nghiệp. Đọc đoạn văn bản sau đây với các yêu cầu:
-- Giọng đọc: ${geminiVoice}
+- Giọng đọc: ${activeVoice}
 - Vùng miền/Accent: ${regionPrompt}
-- Phong cách/Cảm xúc: ${ttsStyle}
+- Phong cách/Cảm xúc: ${activeStyle}
 - ${speedText}
 - ${pitchText}
-- Cảm xúc: Diễn cảm, trôi chảy, đúng sắc thái ${ttsStyle} và ngữ điệu ${ttsRegion}.
+- Cảm xúc: Diễn cảm, trôi chảy, đúng sắc thái ${activeStyle} và ngữ điệu ${activeRegion}.
 
 Nội dung văn bản:
 "${text}"`;
@@ -995,7 +1034,7 @@ Nội dung văn bản:
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: geminiVoice },
+            prebuiltVoiceConfig: { voiceName: activeVoice },
           },
         },
       },
@@ -1034,8 +1073,12 @@ Nội dung văn bản:
   };
 
   const handleTtsConvert = async (previewOnly = false) => {
-    if (!ttsText.trim()) {
+    if (ttsMode === 'single' && !ttsText.trim()) {
       alert('Vui lòng nhập văn bản hoặc tải file');
+      return;
+    }
+    if (ttsMode === 'multiple' && conversationNodes.every(n => !n.text.trim())) {
+      alert('Vui lòng nhập nội dung cho ít nhất một hội thoại');
       return;
     }
 
@@ -1045,53 +1088,79 @@ Nội dung văn bản:
       return;
     }
 
-    let textToProcess = ttsText;
-    if (previewOnly) {
-      const sentences = ttsText.split(/[.!?]/).filter(s => s.trim().length > 0);
-      textToProcess = sentences.slice(0, 2).join('. ') + (sentences.length > 0 ? '.' : '');
-    }
-
     setIsTtsProcessing(true);
     setTtsProgress(0);
     setTtsAudioUrl(null);
 
     try {
-      // Chunking logic
-      const chunks: string[] = [];
-      const maxChars = 3000; 
-      let currentChunk = '';
-      
-      const sentences = textToProcess.match(/[^.!?]+[.!?]*/g) || [textToProcess];
-      
-      for (const sentence of sentences) {
-        if ((currentChunk + sentence).length > maxChars) {
-          if (currentChunk) chunks.push(currentChunk);
-          currentChunk = sentence;
-        } else {
-          currentChunk += sentence;
-        }
-      }
-      if (currentChunk) chunks.push(currentChunk);
-
-      const audioContents: Uint8Array[] = [];
-      for (let i = 0; i < chunks.length; i++) {
-          setTtsProgress(Math.round((i / chunks.length) * 100));
-          const base64 = await callGeminiTtsApi(chunks[i]);
+      if (ttsMode === 'multiple') {
+        const audioContents: Uint8Array[] = [];
+        const activeNodes = conversationNodes.filter(n => n.text.trim().length > 0);
+        
+        for (let i = 0; i < activeNodes.length; i++) {
+          const node = activeNodes[i];
+          setTtsProgress(Math.round((i / activeNodes.length) * 100));
           
+          const base64 = await callGeminiTtsApi(node.text, node.speaker, node.style, node.region);
           const binaryString = window.atob(base64);
           const bytes = new Uint8Array(binaryString.length);
           for (let j = 0; j < binaryString.length; j++) {
             bytes[j] = binaryString.charCodeAt(j);
           }
           audioContents.push(bytes);
-      }
+        }
 
-      const totalPcmLength = audioContents.reduce((acc, curr) => acc + curr.length, 0);
-      const wavHeader = createWavHeader(totalPcmLength);
-      const combinedBlob = new Blob([wavHeader, ...audioContents], { type: 'audio/wav' });
-      const url = URL.createObjectURL(combinedBlob);
-      setTtsAudioUrl(url);
-      setTtsProgress(100);
+        const totalPcmLength = audioContents.reduce((acc, curr) => acc + curr.length, 0);
+        const wavHeader = createWavHeader(totalPcmLength);
+        const combinedBlob = new Blob([wavHeader, ...audioContents], { type: 'audio/wav' });
+        const url = URL.createObjectURL(combinedBlob);
+        setTtsAudioUrl(url);
+        setTtsProgress(100);
+      } else {
+        // Single Speaker Mode
+        let textToProcess = ttsText;
+        if (previewOnly) {
+          const sentences = ttsText.split(/[.!?]/).filter(s => s.trim().length > 0);
+          textToProcess = sentences.slice(0, 2).join('. ') + (sentences.length > 0 ? '.' : '');
+        }
+
+        // Chunking logic
+        const chunks: string[] = [];
+        const maxChars = 3000; 
+        let currentChunk = '';
+        
+        const sentences = textToProcess.match(/[^.!?]+[.!?]*/g) || [textToProcess];
+        
+        for (const sentence of sentences) {
+          if ((currentChunk + sentence).length > maxChars) {
+            if (currentChunk) chunks.push(currentChunk);
+            currentChunk = sentence;
+          } else {
+            currentChunk += sentence;
+          }
+        }
+        if (currentChunk) chunks.push(currentChunk);
+
+        const audioContents: Uint8Array[] = [];
+        for (let i = 0; i < chunks.length; i++) {
+            setTtsProgress(Math.round((i / chunks.length) * 100));
+            const base64 = await callGeminiTtsApi(chunks[i]);
+            
+            const binaryString = window.atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let j = 0; j < binaryString.length; j++) {
+              bytes[j] = binaryString.charCodeAt(j);
+            }
+            audioContents.push(bytes);
+        }
+
+        const totalPcmLength = audioContents.reduce((acc, curr) => acc + curr.length, 0);
+        const wavHeader = createWavHeader(totalPcmLength);
+        const combinedBlob = new Blob([wavHeader, ...audioContents], { type: 'audio/wav' });
+        const url = URL.createObjectURL(combinedBlob);
+        setTtsAudioUrl(url);
+        setTtsProgress(100);
+      }
     } catch (error: any) {
       console.error('TTS Conversion error:', error);
       const errorMsg = error.message || '';
@@ -2090,6 +2159,35 @@ Nội dung văn bản:
                         animate={{ x: 0, opacity: 1 }}
                         className="flex-1 flex flex-col gap-8 bg-secondary-bg/50 p-8 rounded-3xl border border-white/5 backdrop-blur-xl"
                       >
+                        {/* Audio Generation Mode Toggle */}
+                        <div className="space-y-4">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
+                             <Layers size={14} /> Generation Workflow
+                          </label>
+                          <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-white/5">
+                            <button
+                              onClick={() => setTtsMode('single')}
+                              className={`flex-1 py-3 px-4 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 ${
+                                ttsMode === 'single' 
+                                  ? 'bg-accent/20 text-accent border border-accent/30 shadow-[0_0_15px_rgba(238,136,0,0.1)]' 
+                                  : 'text-white/30 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                               Single Speaker
+                            </button>
+                            <button
+                              onClick={() => setTtsMode('multiple')}
+                              className={`flex-1 py-3 px-4 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 ${
+                                ttsMode === 'multiple' 
+                                  ? 'bg-accent/20 text-accent border border-accent/30 shadow-[0_0_15px_rgba(238,136,0,0.1)]' 
+                                  : 'text-white/30 hover:text-white hover:bg-white/5'
+                              }`}
+                            >
+                               Multiple Speaker (Conversation)
+                            </button>
+                          </div>
+                        </div>
+
                         {/* AI Model Selection */}
                         <div className="space-y-4">
                           <label className="text-[10px] font-bold uppercase tracking-widest text-accent flex items-center gap-2">
@@ -2112,181 +2210,296 @@ Nội dung văn bản:
                           </div>
                         </div>
 
-                        {/* Region & Voice Selection */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <div className="space-y-4">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
-                              <ExternalLink size={14} /> Region
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                              {ttsRegions.map(r => {
-                                const tooltipMap: { [key: string]: string } = {
-                                  'Default': 'Tự nhiên',
-                                  'North': 'Miền Bắc',
-                                  'Hue': 'HUẾ',
-                                  'Central': 'MIỀN TRUNG',
-                                  'South': 'Miền Nam'
-                                };
-                                return (
-                                  <div key={r} className="flex-1 min-w-[80px] relative group/tooltip">
-                                    <button
-                                      onClick={() => setTtsRegion(r)}
-                                      className={`w-full py-3 rounded-xl text-[10px] font-bold transition-all border uppercase tracking-wider ${
-                                        ttsRegion === r 
-                                          ? 'bg-accent/10 border-accent text-accent shadow-[0_0_15px_rgba(238,136,0,0.2)]' 
-                                          : 'bg-black/40 border-white/10 text-white/40 hover:border-white/30'
-                                      }`}
+                        {/* Region Selection (Global) */}
+                        <div className="space-y-4">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
+                            <ExternalLink size={14} /> Global Region & Accent
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {ttsRegions.map(r => {
+                              const tooltipMap: { [key: string]: string } = {
+                                'Default': 'Tự nhiên',
+                                'North': 'Miền Bắc',
+                                'Hue': 'HUẾ',
+                                'Central': 'MIỀN TRUNG',
+                                'South': 'Miền Nam'
+                              };
+                              return (
+                                <div key={r} className="flex-1 min-w-[80px] relative group/tooltip">
+                                  <button
+                                    onClick={() => setTtsRegion(r)}
+                                    className={`w-full py-3 rounded-xl text-[10px] font-bold transition-all border uppercase tracking-wider ${
+                                      ttsRegion === r 
+                                        ? 'bg-accent/10 border-accent text-accent shadow-[0_0_15px_rgba(238,136,0,0.2)]' 
+                                        : 'bg-black/40 border-white/10 text-white/40 hover:border-white/30'
+                                    }`}
+                                  >
+                                    {r}
+                                  </button>
+                                  
+                                  {/* Animated Tooltip */}
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-accent text-text-dark text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-all pointer-events-none scale-90 group-hover/tooltip:scale-100 origin-bottom whitespace-nowrap z-50 shadow-[0_4px_15px_rgba(238,136,0,0.4)]">
+                                    {tooltipMap[r]}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-accent" />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <AnimatePresence mode="wait">
+                          {ttsMode === 'single' ? (
+                            <motion.div
+                              key="single-speaker"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              className="contents"
+                            >
+                              {/* Single Speaker Config */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
+                                    <MessageCircle size={14} /> Select Voice (Gemini Pro)
+                                  </label>
+
+                                  <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                      <select 
+                                        value={geminiVoice}
+                                        onChange={(e) => setGeminiVoice(e.target.value)}
+                                        className="w-full bg-black/60 border border-white/10 rounded-xl px-5 py-3 text-white text-sm focus:border-accent appearance-none cursor-pointer"
+                                      >
+                                        {geminiVoices.map(v => (
+                                          <option key={v.id} value={v.id} className="bg-secondary-bg font-sans">{v.name}</option>
+                                        ))}
+                                      </select>
+                                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+                                    </div>
+                                    <button 
+                                      onClick={handlePreviewVoice}
+                                      disabled={isTtsProcessing}
+                                      className="px-4 bg-white/10 hover:bg-accent hover:text-text-dark text-white rounded-xl transition-all border border-white/10 flex items-center justify-center disabled:opacity-30"
+                                      title="Preview this voice"
                                     >
-                                      {r}
+                                      <Play size={16} />
                                     </button>
-                                    
-                                    {/* Animated Tooltip */}
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-accent text-text-dark text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-all pointer-events-none scale-90 group-hover/tooltip:scale-100 origin-bottom whitespace-nowrap z-50 shadow-[0_4px_15px_rgba(238,136,0,0.4)]">
-                                      {tooltipMap[r]}
-                                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-accent" />
+                                  </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
+                                    <Smile size={14} /> Expressions
+                                  </label>
+                                  <div className="relative">
+                                    <select 
+                                      value={ttsStyle}
+                                      onChange={(e) => setTtsStyle(e.target.value)}
+                                      className="w-full bg-black/60 border border-white/10 rounded-xl px-5 py-3 text-white text-sm focus:border-accent appearance-none cursor-pointer custom-scrollbar overflow-y-auto"
+                                    >
+                                      {ttsExpressions.map(group => (
+                                        <optgroup 
+                                          key={group.category} 
+                                          label={group.category}
+                                          className="bg-secondary-bg text-accent font-bold text-[10px] uppercase tracking-widest py-2"
+                                        >
+                                          {group.items.map(item => (
+                                            <option 
+                                              key={item.name} 
+                                              value={item.name}
+                                              className="bg-secondary-bg text-white font-sans text-sm py-2"
+                                            >
+                                              {item.name}
+                                            </option>
+                                          ))}
+                                        </optgroup>
+                                      ))}
+                                    </select>
+                                    <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                   <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
+                                     <Settings2 size={14} /> Audio Customization
+                                   </label>
+                                  <div className="grid grid-cols-2 gap-6 pt-2">
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between text-[10px] font-mono text-white/40 uppercase">
+                                        <span>Speed</span>
+                                        <span className="text-accent">{ttsSpeed}x</span>
+                                      </div>
+                                      <input 
+                                        type="range" min="0.25" max="4.0" step="0.05"
+                                        value={ttsSpeed}
+                                        onChange={(e) => setTtsSpeed(parseFloat(e.target.value))}
+                                        className="w-full accent-accent h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer"
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between text-[10px] font-mono text-white/40 uppercase">
+                                        <span>Pitch</span>
+                                        <span className="text-accent">{ttsPitch >= 0 ? `+${ttsPitch}` : ttsPitch}</span>
+                                      </div>
+                                      <input 
+                                        type="range" min="-20" max="20" step="1"
+                                        value={ttsPitch}
+                                        onChange={(e) => setTtsPitch(parseInt(e.target.value))}
+                                        className="w-full accent-accent h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer"
+                                      />
                                     </div>
                                   </div>
-                                );
-                              })}
-                            </div>
-                          </div>
+                                </div>
 
-                          <div className="space-y-4">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
-                              <MessageCircle size={14} /> Select Voice (Gemini Pro)
-                            </label>
+                                <div className="space-y-4">
+                                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
+                                    <DollarSign size={14} /> Estimated Total Cost
+                                  </label>
+                                  <div className="h-full bg-black/40 border border-accent/20 rounded-2xl p-4 flex items-center justify-around">
+                                    <div className="text-center">
+                                      <p className="text-[10px] text-white/30 uppercase mb-1">Cost (USD)</p>
+                                      <p className="text-xl font-display font-bold text-accent">${calculateTtsCost(ttsMode === 'single' ? ttsText : conversationNodes.map(n => n.text).join('')).usd}</p>
+                                    </div>
+                                    <div className="w-[1px] h-8 bg-white/5" />
+                                    <div className="text-center">
+                                      <p className="text-[10px] text-white/30 uppercase mb-1">Cost (VND)</p>
+                                      <p className="text-xl font-display font-bold text-white">~{calculateTtsCost(ttsMode === 'single' ? ttsText : conversationNodes.map(n => n.text).join('')).vnd}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
 
-                            <div className="flex gap-2">
-                              <div className="relative flex-1">
-                                <select 
-                                  value={geminiVoice}
-                                  onChange={(e) => setGeminiVoice(e.target.value)}
-                                  className="w-full bg-black/60 border border-white/10 rounded-xl px-5 py-3 text-white text-sm focus:border-accent appearance-none cursor-pointer"
+                              {/* Text Area & File Upload */}
+                              <div className="space-y-4 flex-1 flex flex-col">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
+                                    <FileText size={14} /> Text Content
+                                  </label>
+                                  <label className="cursor-pointer text-[10px] font-bold text-accent hover:underline flex items-center gap-2 bg-accent/5 px-3 py-1.5 rounded-lg border border-accent/20">
+                                    <Upload size={14} /> Upload File (.pdf/.docx)
+                                    <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleTtsFileUpload} />
+                                  </label>
+                                </div>
+                                <textarea 
+                                  value={ttsText}
+                                  onChange={(e) => setTtsText(e.target.value)}
+                                  placeholder="Enter the text content you want to convert to speech..."
+                                  className="w-full flex-1 bg-black/60 border border-white/10 rounded-2xl p-6 text-white text-sm focus:outline-none focus:border-accent transition-all resize-none leading-relaxed custom-scrollbar min-h-[300px]"
+                                />
+                              </div>
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="multi-speaker"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              className="flex flex-col gap-6"
+                            >
+                              <div className="flex items-center justify-between">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-accent flex items-center gap-2">
+                                  <Sparkles size={14} /> Conversation Nodes (Gemini TTS)
+                                </label>
+                                <button 
+                                  onClick={addConversationNode}
+                                  className="text-[10px] uppercase font-black bg-accent text-text-dark px-4 py-2 rounded-lg flex items-center gap-2 hover:scale-105 transition-all shadow-[0_0_15px_rgba(238,136,0,0.3)]"
                                 >
-                                  {geminiVoices.map(v => (
-                                    <option key={v.id} value={v.id} className="bg-secondary-bg font-sans">{v.name}</option>
-                                  ))}
-                                </select>
-                                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+                                  <Plus size={14} /> Add Conversation Node
+                                </button>
                               </div>
-                              <button 
-                                onClick={handlePreviewVoice}
-                                disabled={isTtsProcessing}
-                                className="px-4 bg-white/10 hover:bg-accent hover:text-text-dark text-white rounded-xl transition-all border border-white/10 flex items-center justify-center disabled:opacity-30"
-                                title="Preview this voice"
-                              >
-                                <Play size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
 
-                        {/* Adjustments */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          <div className="space-y-4">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
-                              <Smile size={14} /> Expressions
-                            </label>
-                            <div className="relative">
-                              <select 
-                                value={ttsStyle}
-                                onChange={(e) => setTtsStyle(e.target.value)}
-                                className="w-full bg-black/60 border border-white/10 rounded-xl px-5 py-3 text-white text-sm focus:border-accent appearance-none cursor-pointer custom-scrollbar overflow-y-auto"
-                              >
-                                {ttsExpressions.map(group => (
-                                  <optgroup 
-                                    key={group.category} 
-                                    label={group.category}
-                                    className="bg-secondary-bg text-accent font-bold text-[10px] uppercase tracking-widest py-2"
+                              <div className="space-y-6 max-h-[600px] overflow-y-auto px-2 custom-scrollbar">
+                                {conversationNodes.map((node, index) => (
+                                  <motion.div 
+                                    key={node.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="bg-black/40 border border-white/10 rounded-[32px] p-6 space-y-4 relative group"
                                   >
-                                    {group.items.map(item => (
-                                      <option 
-                                        key={item.name} 
-                                        value={item.name}
-                                        className="bg-secondary-bg text-white font-sans text-sm py-2"
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-4">
+                                        <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent flex items-center justify-center text-accent text-xs font-bold font-mono">
+                                          {index + 1}
+                                        </div>
+                                        <div className="relative">
+                                          <select 
+                                            value={node.speaker}
+                                            onChange={(e) => updateConversationNode(node.id, { speaker: e.target.value })}
+                                            className="bg-black/60 border border-white/10 rounded-xl px-4 py-1.5 text-white/80 text-xs focus:border-accent appearance-none cursor-pointer pr-8"
+                                          >
+                                            {geminiVoices.map(v => (
+                                              <option key={v.id} value={v.id}>{v.name}</option>
+                                            ))}
+                                          </select>
+                                          <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+                                        </div>
+                                        
+                                        <div className="relative">
+                                          <select 
+                                            value={node.style}
+                                            onChange={(e) => updateConversationNode(node.id, { style: e.target.value })}
+                                            className="bg-black/60 border border-white/10 rounded-xl px-4 py-1.5 text-white/60 text-[10px] focus:border-accent appearance-none cursor-pointer pr-8 uppercase font-bold tracking-wider"
+                                          >
+                                            {ttsExpressions.flatMap(g => g.items).map(item => (
+                                              <option key={item.name} value={item.name} className="bg-secondary-bg text-white lowercase font-sans">{item.name}</option>
+                                            ))}
+                                          </select>
+                                          <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+                                        </div>
+
+                                        <div className="relative">
+                                          <select 
+                                            value={node.region}
+                                            onChange={(e) => updateConversationNode(node.id, { region: e.target.value })}
+                                            className="bg-black/60 border border-white/10 rounded-xl px-4 py-1.5 text-accent/60 text-[10px] focus:border-accent appearance-none cursor-pointer pr-8 uppercase font-bold tracking-wider"
+                                          >
+                                            {ttsRegions.map(r => (
+                                              <option key={r} value={r} className="bg-secondary-bg text-white lowercase font-sans">{r}</option>
+                                            ))}
+                                          </select>
+                                          <ChevronDown size={10} className="absolute right-2 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+                                        </div>
+                                      </div>
+
+                                      <button 
+                                        onClick={() => removeConversationNode(node.id)}
+                                        className="p-2 text-white/20 hover:text-red-500 transition-colors"
                                       >
-                                        {item.name}
-                                      </option>
-                                    ))}
-                                  </optgroup>
+                                        <Trash2 size={16} />
+                                      </button>
+                                    </div>
+
+                                    <textarea 
+                                      value={node.text}
+                                      onChange={(e) => updateConversationNode(node.id, { text: e.target.value })}
+                                      placeholder={`Nội dung thoại cho ${node.speaker}...`}
+                                      className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-white text-sm focus:outline-none focus:border-accent/40 transition-all resize-none leading-relaxed h-[100px] custom-scrollbar"
+                                    />
+                                  </motion.div>
                                 ))}
-                              </select>
-                              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
-                            </div>
-                            <p className="text-[9px] text-text-primary/40 italic leading-tight">
-                              {/* Display the description of the selected style */}
-                              {ttsExpressions.flatMap(g => g.items).find(i => i.name === ttsStyle)?.desc}
-                            </p>
-                          </div>
+                              </div>
 
-                          <div className="space-y-4">
-                             <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
-                               <Settings2 size={14} /> Audio Customization
-                             </label>
-                            <div className="grid grid-cols-2 gap-6 pt-2">
-                              <div className="space-y-2">
-                                <div className="flex justify-between text-[10px] font-mono text-white/40 uppercase">
-                                  <span>Speed</span>
-                                  <span className="text-accent">{ttsSpeed}x</span>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-black/40 border border-white/5 rounded-2xl p-4 space-y-2">
+                                  <label className="text-[9px] uppercase font-black text-white/40 tracking-widest">Global Speed</label>
+                                  <input 
+                                    type="range" min="0.5" max="2.0" step="0.1"
+                                    value={ttsSpeed}
+                                    onChange={(e) => setTtsSpeed(parseFloat(e.target.value))}
+                                    className="w-full accent-accent h-1 bg-white/5 rounded-lg appearance-none cursor-pointer"
+                                  />
                                 </div>
-                                <input 
-                                  type="range" min="0.25" max="4.0" step="0.05"
-                                  value={ttsSpeed}
-                                  onChange={(e) => setTtsSpeed(parseFloat(e.target.value))}
-                                  className="w-full accent-accent h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <div className="flex justify-between text-[10px] font-mono text-white/40 uppercase">
-                                  <span>Pitch</span>
-                                  <span className="text-accent">{ttsPitch >= 0 ? `+${ttsPitch}` : ttsPitch}</span>
+                                <div className="bg-black/40 border border-white/5 rounded-2xl p-4 space-y-2 text-center flex flex-col justify-center">
+                                  <p className="text-[10px] text-white/30 uppercase mb-1">Est. Cost</p>
+                                  <p className="text-lg font-display font-bold text-accent">${calculateTtsCost(conversationNodes.map(n => n.text).join('')).usd}</p>
                                 </div>
-                                <input 
-                                  type="range" min="-20" max="20" step="1"
-                                  value={ttsPitch}
-                                  onChange={(e) => setTtsPitch(parseInt(e.target.value))}
-                                  className="w-full accent-accent h-1.5 bg-white/5 rounded-lg appearance-none cursor-pointer"
-                                />
                               </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-4">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
-                              <DollarSign size={14} /> Estimated Total Cost
-                            </label>
-                            <div className="h-full bg-black/40 border border-accent/20 rounded-2xl p-4 flex items-center justify-around">
-                              <div className="text-center">
-                                <p className="text-[10px] text-white/30 uppercase mb-1">Cost (USD)</p>
-                                <p className="text-xl font-display font-bold text-accent">${calculateTtsCost(ttsText).usd}</p>
-                              </div>
-                              <div className="w-[1px] h-8 bg-white/5" />
-                              <div className="text-center">
-                                <p className="text-[10px] text-white/30 uppercase mb-1">Cost (VND)</p>
-                                <p className="text-xl font-display font-bold text-white">~{calculateTtsCost(ttsText).vnd}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Text Area & File Upload */}
-                        <div className="space-y-4 flex-1 flex flex-col">
-                          <div className="flex items-center justify-between">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 flex items-center gap-2">
-                              <FileText size={14} /> Text Content
-                            </label>
-                            <label className="cursor-pointer text-[10px] font-bold text-accent hover:underline flex items-center gap-2 bg-accent/5 px-3 py-1.5 rounded-lg border border-accent/20">
-                              <Upload size={14} /> Upload File (.pdf/.docx)
-                              <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleTtsFileUpload} />
-                            </label>
-                          </div>
-                          <textarea 
-                            value={ttsText}
-                            onChange={(e) => setTtsText(e.target.value)}
-                            placeholder="Enter the text content you want to convert to speech..."
-                            className="w-full flex-1 bg-black/60 border border-white/10 rounded-2xl p-6 text-white text-sm focus:outline-none focus:border-accent transition-all resize-none leading-relaxed custom-scrollbar min-h-[300px]"
-                          />
-                        </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
                         {/* Action Buttons */}
                         <div className="flex gap-4">
