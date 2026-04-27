@@ -239,7 +239,8 @@ export default function App() {
       description: string;
       whiskPrompt?: string;
       movementPrompt?: string;
-      jsonPrompt?: string;
+      videoPrompt?: string;
+      jsonVideoPrompt?: string;
     }[];
   } | null>(null);
 
@@ -505,33 +506,100 @@ export default function App() {
       const ai = new GoogleGenAI({ apiKey: getEffectiveApiKey() });
       
       const promptInstructions = scriptType === 'Whisk' 
-        ? `- Prompt tạo ảnh (Whisk AI): Detailed English prompt for high-quality image generation (4K, Cinematic, Hyper-realistic), using specific style keywords.
-           - Prompt tạo chuyển động (Veo 3.1): Detailed English prompt describing precise motion and effects (e.g., slow pan, lens flare, subtle head turn). Note: Any character dialogue MUST be written in Vietnamese.`
-        : `- Prompt chuẩn Json: Generate a detailed English prompt according to JSON standards for Veo 3.1 video creation. Note: Any character dialogue MUST be written in Vietnamese. Include: camera angle, character/subject (detailed, consistent description in EVERY scene), action, context/background, lighting, texture, ambient sound, and precise cinematic movements/effects (e.g., slow pan, lens flare, subtle head turn).`;
+        ? `- "Tổng quan kịch bản:" Tóm tắt ngắn gọn cốt truyện.
+           - "Bảng phân cảnh:" Trình bày dưới dạng bảng với 5 cột bắt buộc:
+             1. "Số TT/Phân cảnh"
+             2. "Thời gian (8 giây)": mỗi cảnh 8 giây.
+             3. "Mô tả kịch bản chi tiết": mô tả [Bối cảnh & môi trường], [Khối Dữ liệu Nhân vật], [Cỡ cảnh, Góc máy & chuyển động], [Hành động/Biểu cảm], [Ánh sáng/Màu sắc], [Chất lượng kỹ thuật/Phong cách], [Lời dẫn truyện/Lời thoại của từng nhân vật].
+             4. "Prompt tạo ảnh (Whisk AI)": Detailed English prompt, optimized for 4K/3D Pixar/Animate/Cartoon/Cinematic/Hyper-realistic. Structure:
+                [Scene: [describe the scene content], Environment: [location, time, lighting, weather]]
+                [Subject: (one or more characters),
+                Character: [Name, Gender, Age],
+                Body shape: [height, proportions],
+                Face: [shape, skin tone, eyes, eyebrows, expression (Friendly/Happy)],
+                Hair: [color, style],
+                Accessories: [watch, glasses, bag, etc.],
+                Outfit: (MUST REMAIN CONSISTENT): [description of shirt, jacket, pants, shoes],
+                Personality: [Active, curious, friendly, clear expressions],
+                Style: [3D Pixar style, smooth skin, soft lighting, stable proportions, high detail],
+                Voice: [pitch, quality, accent, speed, expression]]
+                -- Keep character design unchanged, do not alter outfit, do not modify facial features, maintain full consistency throughout --
+                Character consistency: insert the above Subject description into all prompts of every scene.
+                [Camera: Shot size: [EWS/WS/MS/CU/ECU], Angle: [eye level/low angle/high angle/dutch angle/bird view], Lens: [24mm/35mm/50mm/85mm/cinematic], Focus: [rack focus/deep focus/shallow depth of field]]
+                [Action: [what the character is doing]]
+                [Emotion: [emotion + facial expression]]
+                [Style: [Pixar-style 3D animation, cinematic, ultra-detailed, high quality, global illumination, soft shadows, volumetric light]]
+             5. "Prompt tạo chuyển động (Veo 3.1)": English prompt describing motion and effects. Structure:
+                [Camera: Movement: [static / zoom / pan / tilt / dolly / truck / crane / boom / tracking / handheld / gimbal]]
+                [Action: [human action - detailed gestures], Dialogue (Character Name & Lip-sync): [" (Vietnamese text) "]]
+                [Emotion: [emotion + facial expression]]
+                [Style: [Pixar-style 3D animation, cinematic, ultra-detailed, high quality, global illumination, soft shadows, volumetric light]] No Subtitle`
+        : `- "Tổng quan kịch bản:" Tóm tắt ngắn gọn cốt truyện.
+           - "Bảng phân cảnh:" Trình bày dưới dạng bảng với 5 cột bắt buộc:
+             1. "Số TT/Phân cảnh"
+             2. "Thời gian (8 giây)": mỗi cảnh 8 giây.
+             3. "Mô tả kịch bản chi tiết": mô tả [Bối cảnh & môi trường], [Khối Dữ liệu Nhân vật], [Cỡ cảnh, Góc máy & chuyển động], [Hành động/Biểu cảm], [Ánh sáng/Màu sắc], [Chất lượng kỹ thuật/Phong cách], [Lời dẫn truyện/Lời thoại của từng nhân vật].
+             4. "Prompt tạo video (Veo 3.1)": Detailed descriptive English prompt. Structure:
+                [Scene: [describe scene], Environment: [location, time, lighting, weather]]
+                [Subject: (one or more characters),
+                Character: [Name, Gender, Age],
+                Body shape: [height, proportions],
+                Face: [shape, skin tone, eyes, eyebrows, expression],
+                Hair: [color, style],
+                Accessories: [items],
+                Outfit: (MUST REMAIN CONSISTENT): [shirt, jacket, pants, shoes],
+                Personality: [attributes],
+                Style: [3D Pixar style, high detail],
+                Voice: [attributes]]
+                -- Keep character design consistent throughout --
+                [Camera: Shot size: [EWS/WS/MS/CU/ECU], Angle: [angle types], Lens: [lens types], Focus: [focus types], Movement: [movement types]]
+                [Action: [detailed action], Dialogue (Character Name & Lip-sync): [" (Vietnamese text) "]]
+                [Emotion: [emotion + facial expression]]
+                [Style: [Pixar-style 3D animation, cinematic, high quality]] No Subtitle
+              5. "Prompt tạo video (JSON-Veo 3.1)": Identical content to the descriptive prompt above but formatted as a standard JSON object for Veo 3.1. Structure:
+                [Scene: [describe scene], Environment: [location, time, lighting, weather]]
+                [Subject: (one or more characters),
+                Character: [Name, Gender, Age],
+                Body shape: [height, proportions],
+                Face: [shape, skin tone, eyes, eyebrows, expression],
+                Hair: [color, style],
+                Accessories: [items],
+                Outfit: (MUST REMAIN CONSISTENT): [shirt, jacket, pants, shoes],
+                Personality: [attributes],
+                Style: [3D Pixar style, high detail],
+                Voice: [attributes]]
+                -- Keep character design consistent throughout --
+                [Camera: Shot size: [EWS/WS/MS/CU/ECU], Angle: [angle types], Lens: [lens types], Focus: [focus types], Movement: [movement types]]
+                [Action: [detailed action], Dialogue (Character Name & Lip-sync): [" (Vietnamese text) "]]
+                [Emotion: [emotion + facial expression]]
+                [Style: [Pixar-style 3D animation, cinematic, high quality]] No Subtitle`;
 
       const jsonFields = scriptType === 'Whisk'
-        ? `"whiskPrompt": "...", "movementPrompt": "..."`
-        : `"jsonPrompt": "A highly descriptive, structured prompt for Veo 3.1 video generation following JSON standards"`;
+        ? `"whiskPrompt": "Detailed English prompt for image generation following the structure provided", "movementPrompt": "English prompt for movement following the structure provided"`
+        : `"videoPrompt": "Detailed descriptive English prompt for video generation following the structure provided", "jsonVideoPrompt": "Standard JSON-formatted prompt for Veo 3.1 following the structure provided"`;
 
       const promptText = `
         You are an "AI Video Script and Prompt Expert". 
-        Task: Analyze the user's idea, divide it into exactly ${numberOfScenes} scenes of 8 seconds each.
+        Task: Analyze the user's idea, ${numberOfScenes === 0 ? "determine the optimal number of scenes to cover the story appropriately (not too many, not too few)" : `divide it into exactly ${numberOfScenes} scenes`} of 8 seconds each.
         
         Selected Style: ${promptStyle}
         Target Aspect Ratio: ${promptAspectRatio} (Full HD Quality 1080p)
         
         User Idea: ${userIdea}
-        Number of Scenes: ${numberOfScenes}
-        Total Duration: ${numberOfScenes * 8}s
+        Number of Scenes: ${numberOfScenes === 0 ? "Auto (determined by AI)" : numberOfScenes}
+        Total Duration: ${numberOfScenes === 0 ? "Determined by AI" : `${numberOfScenes * 8}s`}
         Script Type: ${scriptType === 'Whisk' ? 'Image to Video (Whisk)' : 'Text to Video (Json)'}
         
         Rules:
         - Each scene MUST be exactly 8 seconds.
-        - Total scenes MUST be exactly ${numberOfScenes}.
+        ${numberOfScenes === 0 ? `- The first scene MUST be an Extremely Wide Shot (EWS), Bird eye view angle, with Dolly movement (for the opening).
+        - The last scene MUST be a Wide Shot (WS) for the ending.` : `- Total scenes MUST be exactly ${numberOfScenes}.`}
         - Overview summary in Vietnamese.
-        - Storyboard scenes with "Mô tả kịch bản chi tiết" (Vietnamese) including: camera angle, character description (detailed, consistent, and added to EVERY scene), action, background, lighting, texture/materials, and ambient sound.
+        - Storyboard scenes with "Mô tả kịch bản chi tiết" (Vietnamese) following the specific structure provided.
         - Visual prompts MUST strictly follow the selected style: ${promptStyle}.
-        - PROMPTS: Technical descriptions should be in English, but character dialogue MUST be in Vietnamese.
+        - CHARACTER CONSISTENCY: For all prompts, the character description (Subject) MUST be detailed and identical across all scene prompts.
+        - DIALOGUE & LIP-SYNC: For each scene, you MUST include character dialogue in English prompts for "Prompt tạo chuyển động (Veo 3.1)", "Prompt tạo video (Veo 3.1)", and "Prompt tạo video (JSON-Veo 3.1)". Format: [Dialogue (Character Name): "Vietnamese dialogue text inside quotes"] and explicitly state that the character's lips must sync with the speech. The dialogue itself MUST be in Vietnamese.
+        - NO SUBTITLE: You MUST add the phrase "No Subtitle" at the very end of every English prompt for "Prompt tạo chuyển động (Veo 3.1)", "Prompt tạo video (Veo 3.1)", and "Prompt tạo video (JSON-Veo 3.1)".
         ${promptInstructions}
         
         Return ONLY a JSON object with this EXACT structure:
@@ -541,7 +609,7 @@ export default function App() {
             {
               "id": 1,
               "time": "8s",
-              "description": "...",
+              "description": "[Bối cảnh & môi trường]... [Khối Dữ liệu Nhân vật]... [Cỡ cảnh, Góc máy & chuyển động]... [Hành động/Biểu cảm]... [Ánh sáng/Màu sắc]... [Chất lượng kỹ thuật/Phong cách]",
               ${jsonFields}
             }
           ]
@@ -550,16 +618,29 @@ export default function App() {
 
       const result = await ai.models.generateContent({
         model: "gemini-3.1-pro-preview",
-        contents: [{ parts: [{ text: promptText }] }]
+        contents: [{ parts: [{ text: promptText }] }],
+        config: {
+          responseMimeType: "application/json"
+        }
       });
 
       const text = result.text || "";
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+      try {
+        const parsed = JSON.parse(text);
         setGeneratedScript(parsed);
-      } else {
-        throw new Error("Could not parse AI response as JSON");
+      } catch (e) {
+        // Fallback to regex if JSON.parse fails (e.g. if AI includes markdown backticks despite JSON mode)
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            setGeneratedScript(parsed);
+          } catch (innerError) {
+             throw new Error("Could not parse extracted JSON from AI response");
+          }
+        } else {
+          throw new Error("Could not find valid JSON in AI response");
+        }
       }
     } catch (err: any) {
       console.error("Prompt generation error:", err);
@@ -859,9 +940,13 @@ export default function App() {
 
       // Handle Image or Frame input for Veo
       if ((job.inputType === 'image' || job.inputType === 'frame') && job.inputImage) {
+        // Detect MIME type from data URL
+        const match = job.inputImage.match(/^data:(image\/[a-z]+);base64,/);
+        const mimeType = match ? match[1] : 'image/png';
+        
         videoParams.image = {
           imageBytes: job.inputImage.split(',')[1],
-          mimeType: 'image/png'
+          mimeType: mimeType
         };
       }
 
@@ -874,7 +959,7 @@ export default function App() {
 
       while (!operation.done) {
         await new Promise(resolve => setTimeout(resolve, 10000));
-        const nextOp = await ai.operations.getVideosOperation({ operation } as any);
+        const nextOp = await ai.operations.getVideosOperation({ operation: operation } as any);
         if (!nextOp) {
           throw new Error("Failed to poll operation status: no response from API");
         }
@@ -892,7 +977,8 @@ export default function App() {
         });
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch video content: ${response.statusText}`);
+          const fetchErrorBody = await response.text().catch(() => '');
+          throw new Error(`Failed to fetch video content: ${response.statusText}${fetchErrorBody ? ' - ' + fetchErrorBody : ''}`);
         }
         
         const blob = await response.blob();
@@ -908,7 +994,16 @@ export default function App() {
         ));
       } else {
         const opError = (operation as any).error;
-        throw new Error(opError?.message || "Video generation failed");
+        let errorContext = "";
+        
+        // Check for safety filter results which might cause missing video
+        const safetyResults = (operation.response?.generatedVideos?.[0]?.video as any)?.safetyFilterResults;
+        if (safetyResults) {
+          errorContext = " Potentially triggered safety filters.";
+        }
+
+        const errorMessage = opError?.message || (opError?.code ? `Error Code: ${opError.code}` : "Video generation failed without explicit error message from API.") + errorContext;
+        throw new Error(errorMessage);
       }
 
     } catch (error: any) {
@@ -1515,7 +1610,7 @@ Nội dung văn bản:
                               <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2 block font-mono">Number of Scenes</label>
                               <input 
                                 type="number"
-                                min="1"
+                                min="0"
                                 max="50"
                                 value={numberOfScenes}
                                 onChange={(e) => setNumberOfScenes(parseInt(e.target.value) || 0)}
@@ -1525,7 +1620,7 @@ Nội dung văn bản:
                             </div>
                             <div className="flex-1 pb-3">
                               <span className="text-xs font-bold text-accent/60 uppercase tracking-wider">
-                                Estimated Duration: <span className="text-lg text-white ml-2">{numberOfScenes * 8} seconds</span>
+                                Estimated Duration: <span className="text-lg text-white ml-2">{numberOfScenes === 0 ? 'Auto' : `${numberOfScenes * 8} seconds`}</span>
                               </span>
                             </div>
                           </div>
@@ -1623,19 +1718,22 @@ Nội dung văn bản:
 
                           <div className="bg-secondary-bg/50 rounded-3xl border border-white/5 overflow-hidden">
                             <div className="overflow-x-auto custom-scrollbar">
-                              <table className="w-full text-left border-collapse">
+                              <table className="w-full text-left border-collapse table-fixed">
                                 <thead>
                                   <tr className="bg-black/40 border-b border-white/5">
-                                    <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[5%] min-w-[50px]">No.</th>
-                                    <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[10%] min-w-[80px]">Time</th>
-                                    <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[25%]">Detailed Scene Description</th>
+                                    <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[15%]">Số TT/Phân cảnh</th>
+                                    <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[15%]">Thời gian (8 giây)</th>
+                                    <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[30%]">Mô tả kịch bản chi tiết</th>
                                     {scriptType === 'Whisk' ? (
                                       <>
-                                        <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[30%]">Image Prompt (Whisk)</th>
-                                        <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[30%]">Motion Prompt (Veo 3.1)</th>
+                                        <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[35%]">Prompt tạo ảnh (Whisk AI)</th>
+                                        <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[35%]">Prompt tạo chuyển động (Veo 3.1)</th>
                                       </>
                                     ) : (
-                                      <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[60%]">Json Standard Prompt</th>
+                                      <>
+                                        <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[35%]">Prompt tạo video (Veo 3.1)</th>
+                                        <th className="p-6 text-[10px] font-bold uppercase tracking-widest text-accent w-[35%]">Prompt tạo video (JSON-Veo 3.1)</th>
+                                      </>
                                     )}
                                   </tr>
                                 </thead>
@@ -1685,20 +1783,36 @@ Nội dung văn bản:
                                           </td>
                                         </>
                                       ) : (
-                                        <td className="p-6 align-top">
+                                        <>
+                                         <td className="p-6 align-top">
                                            <div className="relative group/cell h-full">
-                                              <div className="text-[11px] font-mono p-6 rounded-2xl bg-black/60 text-accent/80 border border-accent/10 h-full min-h-[120px] overflow-visible leading-relaxed whitespace-pre-wrap break-words">
-                                                {scene.jsonPrompt}
-                                              </div>
-                                              <button 
-                                                onClick={() => handleCopy(scene.jsonPrompt || '', `json-${idx}`)}
-                                                className="absolute top-3 right-3 p-2 rounded-lg bg-white/5 hover:bg-accent hover:text-text-dark transition-all opacity-0 group-hover/cell:opacity-100"
-                                                title="Copy Prompt"
-                                              >
-                                                {copiedId === `json-${idx}` ? <Check size={14} /> : <Copy size={14} />}
-                                              </button>
+                                             <div className="text-[11px] font-mono p-5 rounded-2xl bg-black/60 text-white/70 border border-white/5 h-full min-h-[120px] overflow-visible leading-relaxed whitespace-pre-wrap break-words">
+                                               {scene.videoPrompt}
+                                             </div>
+                                             <button 
+                                               onClick={() => handleCopy(scene.videoPrompt || '', `video-${idx}`)}
+                                               className="absolute top-3 right-3 p-2 rounded-lg bg-white/5 hover:bg-accent hover:text-text-dark transition-all opacity-0 group-hover/cell:opacity-100"
+                                               title="Copy Prompt"
+                                             >
+                                               {copiedId === `video-${idx}` ? <Check size={14} /> : <Copy size={14} />}
+                                             </button>
                                            </div>
-                                        </td>
+                                         </td>
+                                         <td className="p-6 align-top">
+                                           <div className="relative group/cell h-full">
+                                             <div className="text-[11px] font-mono p-5 rounded-2xl bg-black/60 text-white/70 border border-white/5 h-full min-h-[120px] overflow-visible leading-relaxed whitespace-pre-wrap break-words">
+                                               {scene.jsonVideoPrompt}
+                                             </div>
+                                             <button 
+                                               onClick={() => handleCopy(scene.jsonVideoPrompt || '', `jsonvideo-${idx}`)}
+                                               className="absolute top-3 right-3 p-2 rounded-lg bg-white/5 hover:bg-accent hover:text-text-dark transition-all opacity-0 group-hover/cell:opacity-100"
+                                               title="Copy Prompt"
+                                             >
+                                               {copiedId === `jsonvideo-${idx}` ? <Check size={14} /> : <Copy size={14} />}
+                                             </button>
+                                           </div>
+                                         </td>
+                                        </>
                                       )}
                                     </tr>
                                   ))}
@@ -1855,7 +1969,28 @@ Nội dung văn bản:
 
                       {/* Prompt */}
                       <div>
-                        <h3 className="text-sm font-bold uppercase tracking-widest text-accent mb-4">Prompt</h3>
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-sm font-bold uppercase tracking-widest text-accent">Prompt</h3>
+                          {imagePrompt && (
+                            <motion.button 
+                              onClick={() => setImagePrompt('')}
+                              className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white/40 hover:text-accent"
+                              title="Clear Prompt"
+                              animate={{ 
+                                scale: [1, 1.3, 1],
+                                opacity: [0.5, 1, 0.5],
+                                filter: ['drop-shadow(0 0 0px transparent)', 'drop-shadow(0 0 8px #ee8800)', 'drop-shadow(0 0 0px transparent)']
+                              }}
+                              transition={{ 
+                                duration: 1.5, 
+                                repeat: Infinity, 
+                                ease: "easeInOut" 
+                              }}
+                            >
+                              <X size={14} />
+                            </motion.button>
+                          )}
+                        </div>
                         <textarea 
                           value={imagePrompt}
                           onChange={(e) => setImagePrompt(e.target.value)}
@@ -2653,7 +2788,28 @@ Nội dung văn bản:
                       <div className="space-y-4">
                         {/* Bulk Prompts Area */}
                         <div>
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-2 block font-mono">Prompts List (One per line)</label>
+                          <div className="flex justify-between items-center mb-2">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 block font-mono">Prompts List (One per line)</label>
+                            {bulkPrompts && (
+                              <motion.button 
+                                onClick={() => setBulkPrompts('')}
+                                className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white/40 hover:text-accent"
+                                title="Clear List"
+                                animate={{ 
+                                  scale: [1, 1.3, 1],
+                                  opacity: [0.5, 1, 0.5],
+                                  filter: ['drop-shadow(0 0 0px transparent)', 'drop-shadow(0 0 8px #ee8800)', 'drop-shadow(0 0 0px transparent)']
+                                }}
+                                transition={{ 
+                                  duration: 1.5, 
+                                  repeat: Infinity, 
+                                  ease: "easeInOut" 
+                                }}
+                              >
+                                <X size={14} />
+                              </motion.button>
+                            )}
+                          </div>
                           <textarea 
                             value={bulkPrompts}
                             onChange={(e) => setBulkPrompts(e.target.value)}
@@ -2713,10 +2869,8 @@ Nội dung văn bản:
                               onChange={(e) => setNewJobSettings(prev => ({ ...prev, model: e.target.value }))}
                               className="w-full bg-black/40 border border-border-subtle rounded-lg p-3 text-sm text-white focus:outline-none focus:border-accent font-mono appearance-none"
                             >
-                              <option value="veo-2-generate-preview">Veo 2</option>
-                              <option value="veo-3.1-lite-generate-preview">Veo 3.1 lite</option>
-                              <option value="veo-3.1-fast-generate-preview">Veo 3.1 fast</option>
-                              <option value="veo-3.1-generate-preview">Veo 3.1</option>
+                              <option value="veo-3.1-lite-generate-preview">Veo 3.1 Lite</option>
+                              <option value="veo-3.1-generate-preview">Veo 3.1 Pro</option>
                             </select>
                           </div>
                           <div>
@@ -2726,9 +2880,8 @@ Nội dung văn bản:
                               onChange={(e) => setNewJobSettings(prev => ({ ...prev, aspectRatio: e.target.value as any }))}
                               className="w-full bg-black/40 border border-border-subtle rounded-lg p-3 text-sm text-white focus:outline-none focus:border-accent font-mono"
                             >
-                              <option value="16:9">16:9</option>
-                              <option value="9:16">9:16</option>
-                              <option value="1:1">1:1</option>
+                              <option value="16:9">16:9 (Landscape)</option>
+                              <option value="9:16">9:16 (Portrait)</option>
                             </select>
                           </div>
                           <div>
@@ -2949,6 +3102,7 @@ Nội dung văn bản:
                                  <div className="relative group w-[30%]">
                                    <input 
                                      type="number" 
+                                     min="0"
                                      value={numberOfScenes}
                                      onChange={(e) => setNumberOfScenes(parseInt(e.target.value) || 0)}
                                      onFocus={() => setNumberOfScenes(0)}
@@ -2957,7 +3111,7 @@ Nội dung văn bản:
                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 text-[10px] font-mono group-focus-within:text-accent transition-colors uppercase">SCN</span>
                                  </div>
                                  <p className="text-[11px] text-accent/70 font-mono uppercase tracking-[0.15em] flex items-center gap-2 animate-pulse font-bold">
-                                   <Sparkles size={14} className="text-accent" /> Thời lượng dự kiến: {numberOfScenes * 8} Giây (8s/cảnh)
+                                   <Sparkles size={14} className="text-accent" /> Thời lượng dự kiến: {numberOfScenes === 0 ? 'Tự động' : `${numberOfScenes * 8} Giây (8s/cảnh)`}
                                  </p>
                                </div>
                             </div>
@@ -3084,7 +3238,7 @@ Nội dung văn bản:
                                             <th className="p-8 text-[10px] font-black uppercase text-white/30 tracking-widest">Prompt tạo chuyển động (Veo 3.1):</th>
                                           </>
                                         ) : (
-                                          <th className="p-8 text-[10px] font-black uppercase text-white/30 tracking-widest">Prompt chuẩn Json:</th>
+                                          <th className="p-8 text-[10px] font-black uppercase text-white/30 tracking-widest">Prompt Veo 3.1 (tạo video):</th>
                                         )}
                                      </tr>
                                   </thead>
