@@ -1841,7 +1841,7 @@ Nội dung văn bản:
                         <div className="grid grid-cols-4 gap-4">
                           {characterImages.map((img, idx) => (
                             <div key={idx} className="flex flex-col gap-3">
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 text-center">CHAR {idx + 1}</span>
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-white/60 text-center">C{idx + 1}</span>
                               <div 
                                 onClick={() => handleImageUpload(idx, 'character')}
                                 className={`${
@@ -1853,7 +1853,7 @@ Nội dung văn bản:
                               >
                                 {img ? (
                                   <>
-                                    <img src={img} alt={`Char ${idx}`} className="w-full h-full object-cover" />
+                                    <img src={img} alt={`C${idx + 1}`} className="w-full h-full object-cover" />
                                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                       <button 
                                         onClick={(e) => {
