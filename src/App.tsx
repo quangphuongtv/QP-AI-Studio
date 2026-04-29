@@ -9,6 +9,10 @@ import { GoogleGenAI } from "@google/genai";
 import * as mammoth from 'mammoth';
 import * as pdfjs from 'pdfjs-dist';
 import WaveSurfer from 'wavesurfer.js';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Document, Packer, Paragraph, Table as DocxTable, TableCell, TableRow, WidthType, Footer, AlignmentType, TextRun } from 'docx';
+import { saveAs } from 'file-saver';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -490,6 +494,152 @@ export default function App() {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDownloadDoc = async () => {
+    if (!generatedScript) return;
+
+    const tableRows = [
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Số TT/Phân cảnh", bold: true, font: "Calibri", size: 18 })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Thời gian (8 giây)", bold: true, font: "Calibri", size: 18 })] })] }),
+          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Mô tả kịch bản chi tiết", bold: true, font: "Calibri", size: 18 })] })] }),
+          ...(scriptType === 'Whisk' 
+            ? [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Prompt tạo ảnh (Whisk AI)", bold: true, font: "Calibri", size: 18 })] })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Prompt tạo chuyển động (Veo 3.1)", bold: true, font: "Calibri", size: 18 })] })] })
+              ]
+            : [
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Prompt tạo video (Veo 3.1)", bold: true, font: "Calibri", size: 18 })] })] }),
+                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Prompt tạo video (JSON-Veo 3.1)", bold: true, font: "Calibri", size: 18 })] })] })
+              ]
+          )
+        ],
+      }),
+    ];
+
+    generatedScript.scenes.forEach((scene) => {
+      tableRows.push(
+        new TableRow({
+          children: [
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(scene.id), font: "Calibri", size: 18 })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.time, font: "Calibri", size: 18 })] })] }),
+            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.description, font: "Calibri", size: 18 })] })] }),
+            ...(scriptType === 'Whisk' 
+              ? [
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.whiskPrompt || "", font: "Calibri", size: 18 })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.movementPrompt || "", font: "Calibri", size: 18 })] })] })
+                ]
+              : [
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.videoPrompt || "", font: "Calibri", size: 18 })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.jsonVideoPrompt || "", font: "Calibri", size: 18 })] })] })
+                ]
+            )
+          ],
+        })
+      );
+    });
+
+    const doc = new Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: "Calibri",
+              size: 18,
+            },
+          },
+        },
+      },
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            children: [new TextRun({ text: "VIDEO SCRIPT IDEA", bold: true, size: 18, font: "Calibri" })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: `Idea: ${userIdea}`, italics: true, font: "Calibri", size: 18 })],
+            spacing: { after: 400 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "STORY OVERVIEW", bold: true, underline: {}, font: "Calibri", size: 18 })],
+            spacing: { after: 200 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: generatedScript.overview, font: "Calibri", size: 18 })],
+            spacing: { after: 400 },
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: "STORYBOARD", bold: true, underline: {}, font: "Calibri", size: 18 })],
+            spacing: { after: 200 },
+          }),
+          new DocxTable({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: tableRows,
+          }),
+        ],
+      }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `Video_Script_${Date.now()}.docx`);
+  };
+
+  const handleDownloadPdf = () => {
+    if (!generatedScript) return;
+
+    const doc = new jsPDF('l', 'mm', 'a4');
+    
+    // Use helvetica for PDF as it's the closest standard font to Calibri (sans-serif)
+    doc.setFont("helvetica");
+    
+    // Add title
+    doc.setFontSize(9);
+    doc.text("VIDEO SCRIPT IDEA", 148, 20, { align: 'center' });
+    
+    doc.setFontSize(9);
+    doc.text(`Idea: ${userIdea.substring(0, 100)}${userIdea.length > 100 ? '...' : ''}`, 15, 30);
+    
+    doc.setFontSize(9);
+    doc.text("STORY OVERVIEW", 15, 40);
+    doc.setFontSize(9);
+    const overviewLines = doc.splitTextToSize(generatedScript.overview, 260);
+    doc.text(overviewLines, 15, 45);
+    
+    const startY = 45 + (overviewLines.length * 5) + 10;
+    doc.setFontSize(9);
+    doc.text("STORYBOARD", 15, startY);
+
+    const headers = [
+      ["ID", "Time", "Description", ...(scriptType === 'Whisk' ? ["Image Prompt", "Motion Prompt"] : ["Video Prompt", "JSON Prompt"])]
+    ];
+
+    const data = generatedScript.scenes.map(scene => [
+      scene.id,
+      scene.time,
+      scene.description,
+      ...(scriptType === 'Whisk' ? [scene.whiskPrompt, scene.movementPrompt] : [scene.videoPrompt, scene.jsonVideoPrompt])
+    ]);
+
+    autoTable(doc, {
+      head: headers,
+      body: data,
+      startY: startY + 5,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 15 },
+        2: { cellWidth: 80 },
+        3: { cellWidth: 80 },
+        4: { cellWidth: 80 }
+      }
+    });
+
+    doc.save(`Video_Script_${Date.now()}.pdf`);
   };
 
   const handlePromptGenerate = async () => {
@@ -1710,9 +1860,25 @@ Nội dung văn bản:
                           className="space-y-8"
                         >
                           <div className="p-8 bg-accent/5 border border-accent/20 rounded-3xl">
-                            <h3 className="text-lg font-display font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-3">
-                              <Activity className="text-accent" /> Story Overview
-                            </h3>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                              <h3 className="text-lg font-display font-bold text-white uppercase tracking-widest flex items-center gap-3">
+                                <Activity className="text-accent" /> Story Overview
+                              </h3>
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={handleDownloadDoc}
+                                  className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-primary/60 hover:bg-accent/20 hover:border-accent hover:text-white transition-all"
+                                >
+                                  <Download size={14} /> Download Word (.doc)
+                                </button>
+                                <button 
+                                  onClick={handleDownloadPdf}
+                                  className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-primary/60 hover:bg-accent/20 hover:border-accent hover:text-white transition-all"
+                                >
+                                  <Download size={14} /> Download PDF (.pdf)
+                                </button>
+                              </div>
+                            </div>
                             <p className="text-sm text-text-primary/80 leading-relaxed italic">{generatedScript.overview}</p>
                           </div>
 
