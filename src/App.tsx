@@ -502,17 +502,17 @@ export default function App() {
     const tableRows = [
       new TableRow({
         children: [
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Số TT/Phân cảnh", bold: true, font: "Calibri", size: 18 })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Thời gian (8 giây)", bold: true, font: "Calibri", size: 18 })] })] }),
-          new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Mô tả kịch bản chi tiết", bold: true, font: "Calibri", size: 18 })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Số TT/Phân cảnh", bold: true, font: "Calibri", size: 18 })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Thời gian (8 giây)", bold: true, font: "Calibri", size: 18 })] })] }),
+          new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Mô tả kịch bản chi tiết", bold: true, font: "Calibri", size: 18 })] })] }),
           ...(scriptType === 'Whisk' 
             ? [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Prompt tạo ảnh (Whisk AI)", bold: true, font: "Calibri", size: 18 })] })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Prompt tạo chuyển động (Veo 3.1)", bold: true, font: "Calibri", size: 18 })] })] })
+                new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Prompt tạo ảnh (Whisk AI)", bold: true, font: "Calibri", size: 18 })] })] }),
+                new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Prompt tạo chuyển động (Veo 3.1)", bold: true, font: "Calibri", size: 18 })] })] })
               ]
             : [
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Prompt tạo video (Veo 3.1)", bold: true, font: "Calibri", size: 18 })] })] }),
-                new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Prompt tạo video (JSON-Veo 3.1)", bold: true, font: "Calibri", size: 18 })] })] })
+                new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Prompt tạo video (Veo 3.1)", bold: true, font: "Calibri", size: 18 })] })] }),
+                new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Prompt tạo video (JSON-Veo 3.1)", bold: true, font: "Calibri", size: 18 })] })] })
               ]
           )
         ],
@@ -523,17 +523,17 @@ export default function App() {
       tableRows.push(
         new TableRow({
           children: [
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: String(scene.id), font: "Calibri", size: 18 })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.time, font: "Calibri", size: 18 })] })] }),
-            new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.description, font: "Calibri", size: 18 })] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(scene.id), font: "Calibri", size: 18 })] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: scene.time, font: "Calibri", size: 18 })] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [new TextRun({ text: scene.description, font: "Calibri", size: 18 })] })] }),
             ...(scriptType === 'Whisk' 
               ? [
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.whiskPrompt || "", font: "Calibri", size: 18 })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.movementPrompt || "", font: "Calibri", size: 18 })] })] })
+                  new TableCell({ children: [new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [new TextRun({ text: scene.whiskPrompt || "", font: "Calibri", size: 18 })] })] }),
+                  new TableCell({ children: [new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [new TextRun({ text: scene.movementPrompt || "", font: "Calibri", size: 18 })] })] })
                 ]
               : [
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.videoPrompt || "", font: "Calibri", size: 18 })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: scene.jsonVideoPrompt || "", font: "Calibri", size: 18 })] })] })
+                  new TableCell({ children: [new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [new TextRun({ text: scene.videoPrompt || "", font: "Calibri", size: 18 })] })] }),
+                  new TableCell({ children: [new Paragraph({ alignment: AlignmentType.JUSTIFIED, children: [new TextRun({ text: scene.jsonVideoPrompt || "", font: "Calibri", size: 18 })] })] })
                 ]
             )
           ],
@@ -553,7 +553,13 @@ export default function App() {
         },
       },
       sections: [{
-        properties: {},
+        properties: {
+          page: {
+            size: {
+              orientation: "landscape",
+            },
+          },
+        },
         children: [
           new Paragraph({
             children: [new TextRun({ text: "VIDEO SCRIPT IDEA", bold: true, size: 18, font: "Calibri" })],
@@ -570,6 +576,7 @@ export default function App() {
           }),
           new Paragraph({
             children: [new TextRun({ text: generatedScript.overview, font: "Calibri", size: 18 })],
+            alignment: AlignmentType.JUSTIFIED,
             spacing: { after: 400 },
           }),
           new Paragraph({
@@ -586,60 +593,6 @@ export default function App() {
 
     const blob = await Packer.toBlob(doc);
     saveAs(blob, `Video_Script_${Date.now()}.docx`);
-  };
-
-  const handleDownloadPdf = () => {
-    if (!generatedScript) return;
-
-    const doc = new jsPDF('l', 'mm', 'a4');
-    
-    // Use helvetica for PDF as it's the closest standard font to Calibri (sans-serif)
-    doc.setFont("helvetica");
-    
-    // Add title
-    doc.setFontSize(9);
-    doc.text("VIDEO SCRIPT IDEA", 148, 20, { align: 'center' });
-    
-    doc.setFontSize(9);
-    doc.text(`Idea: ${userIdea.substring(0, 100)}${userIdea.length > 100 ? '...' : ''}`, 15, 30);
-    
-    doc.setFontSize(9);
-    doc.text("STORY OVERVIEW", 15, 40);
-    doc.setFontSize(9);
-    const overviewLines = doc.splitTextToSize(generatedScript.overview, 260);
-    doc.text(overviewLines, 15, 45);
-    
-    const startY = 45 + (overviewLines.length * 5) + 10;
-    doc.setFontSize(9);
-    doc.text("STORYBOARD", 15, startY);
-
-    const headers = [
-      ["ID", "Time", "Description", ...(scriptType === 'Whisk' ? ["Image Prompt", "Motion Prompt"] : ["Video Prompt", "JSON Prompt"])]
-    ];
-
-    const data = generatedScript.scenes.map(scene => [
-      scene.id,
-      scene.time,
-      scene.description,
-      ...(scriptType === 'Whisk' ? [scene.whiskPrompt, scene.movementPrompt] : [scene.videoPrompt, scene.jsonVideoPrompt])
-    ]);
-
-    autoTable(doc, {
-      head: headers,
-      body: data,
-      startY: startY + 5,
-      theme: 'grid',
-      styles: { font: 'helvetica', fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
-      columnStyles: {
-        0: { cellWidth: 10 },
-        1: { cellWidth: 15 },
-        2: { cellWidth: 80 },
-        3: { cellWidth: 80 },
-        4: { cellWidth: 80 }
-      }
-    });
-
-    doc.save(`Video_Script_${Date.now()}.pdf`);
   };
 
   const handlePromptGenerate = async () => {
@@ -1823,12 +1776,40 @@ Nội dung văn bản:
                           </h3>
                         </div>
                         
-                        <textarea 
-                          value={userIdea}
-                          onChange={(e) => setUserIdea(e.target.value)}
-                          placeholder="Describe your idea: E.g., An astronaut walking on Mars, discovering a glowing ancient relic..."
-                          className="flex-1 w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-sm text-white focus:outline-none focus:border-accent resize-none custom-scrollbar leading-relaxed"
-                        />
+                        <div className="relative flex-1 flex flex-col group">
+                          <textarea 
+                            value={userIdea}
+                            onChange={(e) => setUserIdea(e.target.value)}
+                            placeholder="Describe your idea: E.g., An astronaut walking on Mars, discovering a glowing ancient relic..."
+                            className="flex-1 w-full bg-black/40 border border-white/10 rounded-2xl p-6 text-sm text-white focus:outline-none focus:border-accent resize-none custom-scrollbar leading-relaxed"
+                          />
+                          {userIdea && (
+                            <motion.button
+                              onClick={() => setUserIdea('')}
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ 
+                                opacity: [1, 0.4, 1],
+                                scale: 1,
+                                boxShadow: [
+                                  "0 0 10px rgba(168, 85, 247, 0.2)",
+                                  "0 0 25px rgba(168, 85, 247, 0.6)",
+                                  "0 0 10px rgba(168, 85, 247, 0.2)"
+                                ]
+                              }}
+                              transition={{ 
+                                opacity: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+                                boxShadow: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+                                scale: { duration: 0.2 }
+                              }}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-[#240046]/80 border border-[#a855f7] rounded-full text-[#a855f7] hover:bg-[#a855f7] hover:text-white transition-colors backdrop-blur-sm shadow-[0_0_15px_-3px_rgba(168,85,247,0.4)]"
+                              title="Clear all text"
+                            >
+                              <X size={16} strokeWidth={3} />
+                            </motion.button>
+                          )}
+                        </div>
 
                         <button
                           onClick={handlePromptGenerate}
@@ -1870,12 +1851,6 @@ Nội dung văn bản:
                                   className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-primary/60 hover:bg-accent/20 hover:border-accent hover:text-white transition-all"
                                 >
                                   <Download size={14} /> Download Word (.doc)
-                                </button>
-                                <button 
-                                  onClick={handleDownloadPdf}
-                                  className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-primary/60 hover:bg-accent/20 hover:border-accent hover:text-white transition-all"
-                                >
-                                  <Download size={14} /> Download PDF (.pdf)
                                 </button>
                               </div>
                             </div>
@@ -2137,32 +2112,41 @@ Nội dung văn bản:
                       <div>
                         <div className="flex justify-between items-center mb-4">
                           <h3 className="text-sm font-bold uppercase tracking-widest text-accent">Prompt</h3>
+                        </div>
+                        <div className="relative group flex flex-col">
+                          <textarea 
+                            value={imagePrompt}
+                            onChange={(e) => setImagePrompt(e.target.value)}
+                            placeholder="Describe the desired action or composition..."
+                            className="w-full h-32 bg-black/40 border border-border-subtle rounded-lg p-4 text-sm text-white focus:outline-none focus:border-accent resize-none custom-scrollbar"
+                          />
                           {imagePrompt && (
-                            <motion.button 
+                            <motion.button
                               onClick={() => setImagePrompt('')}
-                              className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white/40 hover:text-accent"
-                              title="Clear Prompt"
+                              initial={{ opacity: 0, scale: 0.8 }}
                               animate={{ 
-                                scale: [1, 1.3, 1],
-                                opacity: [0.5, 1, 0.5],
-                                filter: ['drop-shadow(0 0 0px transparent)', 'drop-shadow(0 0 8px #ee8800)', 'drop-shadow(0 0 0px transparent)']
+                                opacity: [1, 0.4, 1],
+                                scale: 1,
+                                boxShadow: [
+                                  "0 0 10px rgba(168, 85, 247, 0.2)",
+                                  "0 0 25px rgba(168, 85, 247, 0.6)",
+                                  "0 0 10px rgba(168, 85, 247, 0.2)"
+                                ]
                               }}
                               transition={{ 
-                                duration: 1.5, 
-                                repeat: Infinity, 
-                                ease: "easeInOut" 
+                                opacity: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+                                boxShadow: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+                                scale: { duration: 0.2 }
                               }}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              className="absolute top-2 right-2 z-20 w-7 h-7 flex items-center justify-center bg-[#240046]/80 border border-[#a855f7] rounded-full text-[#a855f7] hover:bg-[#a855f7] hover:text-white transition-colors backdrop-blur-sm shadow-[0_0_15px_-3px_rgba(168,85,247,0.4)]"
+                              title="Clear Prompt"
                             >
-                              <X size={14} />
+                              <X size={14} strokeWidth={3} />
                             </motion.button>
                           )}
                         </div>
-                        <textarea 
-                          value={imagePrompt}
-                          onChange={(e) => setImagePrompt(e.target.value)}
-                          placeholder="Describe the desired action or composition..."
-                          className="w-full h-32 bg-black/40 border border-border-subtle rounded-lg p-4 text-sm text-white focus:outline-none focus:border-accent resize-none custom-scrollbar"
-                        />
                         
                         {/* Model & Resolution Info */}
                         <div className="flex gap-4 mb-4">
@@ -2684,12 +2668,40 @@ Nội dung văn bản:
                                     <input type="file" className="hidden" accept=".pdf,.docx" onChange={handleTtsFileUpload} />
                                   </label>
                                 </div>
-                                <textarea 
-                                  value={ttsText}
-                                  onChange={(e) => setTtsText(e.target.value)}
-                                  placeholder="Enter the text content you want to convert to speech..."
-                                  className="w-full flex-1 bg-black/60 border border-white/10 rounded-2xl p-6 text-white text-sm focus:outline-none focus:border-accent transition-all resize-none leading-relaxed custom-scrollbar min-h-[300px]"
-                                />
+                                <div className="relative flex-1 flex flex-col group">
+                                  <textarea 
+                                    value={ttsText}
+                                    onChange={(e) => setTtsText(e.target.value)}
+                                    placeholder="Enter the text content you want to convert to speech..."
+                                    className="w-full flex-1 bg-black/60 border border-white/10 rounded-2xl p-6 text-white text-sm focus:outline-none focus:border-accent transition-all resize-none leading-relaxed custom-scrollbar min-h-[300px]"
+                                  />
+                                  {ttsText && (
+                                    <motion.button
+                                      onClick={() => setTtsText('')}
+                                      initial={{ opacity: 0, scale: 0.8 }}
+                                      animate={{ 
+                                        opacity: [1, 0.4, 1],
+                                        scale: 1,
+                                        boxShadow: [
+                                          "0 0 10px rgba(168, 85, 247, 0.2)",
+                                          "0 0 25px rgba(168, 85, 247, 0.6)",
+                                          "0 0 10px rgba(168, 85, 247, 0.2)"
+                                        ]
+                                      }}
+                                      transition={{ 
+                                        opacity: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+                                        boxShadow: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+                                        scale: { duration: 0.2 }
+                                      }}
+                                      whileHover={{ scale: 1.1 }}
+                                      whileTap={{ scale: 0.9 }}
+                                      className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-[#240046]/80 border border-[#a855f7] rounded-full text-[#a855f7] hover:bg-[#a855f7] hover:text-white transition-colors backdrop-blur-sm shadow-[0_0_15px_-3px_rgba(168,85,247,0.4)]"
+                                      title="Clear all text"
+                                    >
+                                      <X size={16} strokeWidth={3} />
+                                    </motion.button>
+                                  )}
+                                </div>
                               </div>
                             </motion.div>
                           ) : (
@@ -2956,32 +2968,41 @@ Nội dung văn bản:
                         <div>
                           <div className="flex justify-between items-center mb-2">
                             <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 block font-mono">Prompts List (One per line)</label>
+                          </div>
+                          <div className="relative group flex flex-col">
+                            <textarea 
+                              value={bulkPrompts}
+                              onChange={(e) => setBulkPrompts(e.target.value)}
+                              placeholder="A sunset over Mars...&#10;Cyberpunk city flyover...&#10;Ancient ruins in the jungle..."
+                              className="w-full h-64 bg-black/40 border border-border-subtle rounded-lg p-4 text-sm text-white focus:outline-none focus:border-accent resize-none custom-scrollbar font-sans"
+                            />
                             {bulkPrompts && (
-                              <motion.button 
+                              <motion.button
                                 onClick={() => setBulkPrompts('')}
-                                className="p-1 hover:bg-white/10 rounded-lg transition-colors text-white/40 hover:text-accent"
-                                title="Clear List"
+                                initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ 
-                                  scale: [1, 1.3, 1],
-                                  opacity: [0.5, 1, 0.5],
-                                  filter: ['drop-shadow(0 0 0px transparent)', 'drop-shadow(0 0 8px #ee8800)', 'drop-shadow(0 0 0px transparent)']
+                                  opacity: [1, 0.4, 1],
+                                  scale: 1,
+                                  boxShadow: [
+                                    "0 0 10px rgba(168, 85, 247, 0.2)",
+                                    "0 0 25px rgba(168, 85, 247, 0.6)",
+                                    "0 0 10px rgba(168, 85, 247, 0.2)"
+                                  ]
                                 }}
                                 transition={{ 
-                                  duration: 1.5, 
-                                  repeat: Infinity, 
-                                  ease: "easeInOut" 
+                                  opacity: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+                                  boxShadow: { duration: 1.5, repeat: Infinity, ease: "easeInOut" },
+                                  scale: { duration: 0.2 }
                                 }}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                className="absolute top-2 right-2 z-20 w-7 h-7 flex items-center justify-center bg-[#240046]/80 border border-[#a855f7] rounded-full text-[#a855f7] hover:bg-[#a855f7] hover:text-white transition-colors backdrop-blur-sm shadow-[0_0_15px_-3px_rgba(168,85,247,0.4)]"
+                                title="Clear List"
                               >
-                                <X size={14} />
+                                <X size={14} strokeWidth={3} />
                               </motion.button>
                             )}
                           </div>
-                          <textarea 
-                            value={bulkPrompts}
-                            onChange={(e) => setBulkPrompts(e.target.value)}
-                            placeholder="A sunset over Mars...&#10;Cyberpunk city flyover...&#10;Ancient ruins in the jungle..."
-                            className="w-full h-64 bg-black/40 border border-border-subtle rounded-lg p-4 text-sm text-white focus:outline-none focus:border-accent resize-none custom-scrollbar font-sans"
-                          />
                         </div>
 
                         {/* Input Type Selector */}
