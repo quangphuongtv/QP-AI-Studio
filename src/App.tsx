@@ -1517,7 +1517,7 @@ Nội dung văn bản:
   return (
     <div className="min-h-screen bg-main-bg text-text-primary selection:bg-accent selection:text-main-bg">
       {/* Header */}
-      <header className="sticky top-0 z-[100] w-full min-h-[150px] border-b border-border-subtle bg-secondary-bg/80 backdrop-blur-xl flex flex-col md:flex-row shadow-2xl">
+      <header className="sticky top-0 z-[100] w-full min-h-[150px] border-b border-border-subtle bg-secondary-bg/60 backdrop-blur-xl flex flex-col md:flex-row shadow-2xl">
         {/* Left Column (Logo Branding) */}
         <div className="min-w-[350px] min-h-[150px] h-auto border-r border-border-subtle bg-black/40 flex items-center justify-center px-4 overflow-hidden">
           <motion.div
