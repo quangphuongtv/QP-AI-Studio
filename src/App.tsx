@@ -1546,7 +1546,7 @@ Nội dung văn bản:
                 ease: "easeInOut"
               }
             }}
-            className="text-[44px] font-display font-black italic tracking-tighter text-transparent bg-clip-text whitespace-nowrap bg-gradient-to-r from-[#0088ff] via-[#66ccff] to-[#0088ff] bg-[length:200%_auto] cursor-pointer"
+            className="text-[44px] font-display font-black italic tracking-tighter text-transparent bg-clip-text whitespace-nowrap bg-gradient-to-r from-[#0088ff] via-[#66ccff] to-[#0088ff] bg-[length:200%_auto] cursor-pointer px-[10px]"
             whileHover={{ 
               scale: 1.15, 
               filter: "brightness(1.5)",
