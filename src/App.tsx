@@ -1517,7 +1517,7 @@ Nội dung văn bản:
   return (
     <div className="min-h-screen bg-main-bg text-text-primary selection:bg-accent selection:text-main-bg">
       {/* Header */}
-      <header className="sticky top-0 z-[100] w-full min-h-[150px] border-b border-border-subtle bg-secondary-bg flex flex-col md:flex-row shadow-2xl">
+      <header className="sticky top-0 z-[100] w-full min-h-[150px] border-b border-border-subtle bg-secondary-bg/80 backdrop-blur-xl flex flex-col md:flex-row shadow-2xl">
         {/* Left Column (Logo Branding) */}
         <div className="min-w-[350px] min-h-[150px] h-auto border-r border-border-subtle bg-black/40 flex items-center justify-center px-4 overflow-hidden">
           <motion.div
@@ -2208,7 +2208,7 @@ Nội dung văn bản:
                                 }`}
                               >
                                 <span className="text-base">{style.icon}</span>
-                                <span className="text-[7px] font-bold uppercase tracking-tighter text-center">{style.name}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-tighter text-center">{style.name}</span>
                               </button>
                             ))}
                           </div>
@@ -3543,7 +3543,7 @@ Nội dung văn bản:
       <footer className="w-full min-h-[150px] bg-secondary-bg border-t border-border-subtle px-10 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-col text-center md:text-left">
           <p className="text-[16px] font-medium text-white mb-2">
-            Copyright by: <strong className="text-accent">NGUYEN QUANG PHUONG</strong>
+            Copyright by: <strong className="text-accent">NGUYEN QUANG PHUONG <sup className="text-[10px] ml-1 font-normal">®</sup></strong>
           </p>
           <p className="text-[14px] text-text-primary/50">
             &copy; 2024 All Rights Reserved. AI Character Consistency Generation System.
