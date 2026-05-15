@@ -592,7 +592,9 @@ export default function App() {
     });
 
     const blob = await Packer.toBlob(doc);
-    saveAs(blob, `Video_Script_${Date.now()}.docx`);
+    const match = userIdea.match(/"([^"]+)"/);
+    const fileName = match ? match[1] : `Video_Script_${Date.now()}`;
+    saveAs(blob, `${fileName}.doc`);
   };
 
   const handlePromptGenerate = async () => {
