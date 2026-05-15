@@ -5,7 +5,6 @@
 
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
 import * as mammoth from 'mammoth';
 import * as pdfjs from 'pdfjs-dist';
 import WaveSurfer from 'wavesurfer.js';
@@ -267,7 +266,7 @@ export default function App() {
   });
 
   // Audio Generator (TTS Master) State
-  const [ttsAiModel, setTtsAiModel] = useState('gemini-3.1-flash-tts-preview');
+  const [ttsAiModel, setTtsAiModel] = useState('gemini-3-flash-preview');
   const [ttsRegion, setTtsRegion] = useState('North');
   const [ttsStyle, setTtsStyle] = useState('Calm/Serene (Bình thản)');
   const [geminiVoice, setGeminiVoice] = useState('Puck');
@@ -285,9 +284,9 @@ export default function App() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const ttsAiModels = [
-    { id: 'gemini-2.5-flash-tts-preview', name: 'Gemini 2.5 Flash Preview TTS' },
-    { id: 'gemini-2.5-pro-tts-preview', name: 'Gemini 2.5 Pro Preview TTS' },
-    { id: 'gemini-3.1-flash-tts-preview', name: 'Gemini 3.1 Flash TTS Preview' },
+    { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
+    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
+    { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' },
   ];
 
   const geminiVoices = [
@@ -598,21 +597,13 @@ export default function App() {
   const handlePromptGenerate = async () => {
     if (!userIdea.trim()) return;
     
-    if (needsApiKey) {
-      alert('Vui lòng chọn API Key để tiếp tục sử dụng dịch vụ.');
-      await handleOpenApiKeyDialog();
-      return;
-    }
-
     setIsProcessingPrompt(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: getEffectiveApiKey() });
-      
       const promptInstructions = scriptType === 'Whisk' 
         ? `- "Tổng quan kịch bản:" Tóm tắt ngắn gọn cốt truyện.
            - "Bảng phân cảnh:" Trình bày dưới dạng bảng với 5 cột bắt buộc:
              1. "Số TT/Phân cảnh"
-             2. "Thời gian (8 giây)": mỗi cảnh 8 giây.
+             2. "Thời gian (5-8 giây)": mỗi phân cảnh có thời lượng từ 5 đến 8 giây.
              3. "Mô tả kịch bản chi tiết": mô tả [Bối cảnh & môi trường], [Khối Dữ liệu Nhân vật], [Cỡ cảnh, Góc máy & chuyển động], [Hành động/Biểu cảm], [Ánh sáng/Màu sắc], [Chất lượng kỹ thuật/Phong cách], [Lời dẫn truyện/Lời thoại của từng nhân vật].
              4. "Prompt tạo ảnh (Whisk AI)": Detailed English prompt, optimized for 4K/3D Pixar/Animate/Cartoon/Cinematic/Hyper-realistic. Structure:
                 [Scene: [describe the scene content], Environment: [location, time, lighting, weather]]
@@ -626,21 +617,21 @@ export default function App() {
                 Personality: [Active, curious, friendly, clear expressions],
                 Style: [3D Pixar style, smooth skin, soft lighting, stable proportions, high detail],
                 Voice: [pitch, quality, accent, speed, expression]]
-                -- Keep character design unchanged, do not alter outfit, do not modify facial features, maintain full consistency throughout --
-                Character consistency: insert the above Subject description into all prompts of every scene.
+                -- GIỮ NGUYÊN THIẾT KẾ NHÂN VẬT, KHÔNG THAY ĐỔI --
+                -- ĐỒNG NHẤT NHÂN VẬT: chèn đoạn mô tả nhân vật (Subject) vào tất cả các prompt của từng phân cảnh (Chỉ chèn đoạn mô tả đối với những nhân vật nào có trong phân cảnh) --
                 [Camera: Shot size: [EWS/WS/MS/CU/ECU], Angle: [eye level/low angle/high angle/dutch angle/bird view], Lens: [24mm/35mm/50mm/85mm/cinematic], Focus: [rack focus/deep focus/shallow depth of field]]
                 [Action: [what the character is doing]]
                 [Emotion: [emotion + facial expression]]
-                [Style: [Pixar-style 3D animation, cinematic, ultra-detailed, high quality, global illumination, soft shadows, volumetric light]]
+                [Style: [Pixar-style 3D animation, cinematic, ultra-detailed, high quality]]
              5. "Prompt tạo chuyển động (Veo 3.1)": English prompt describing motion and effects. Structure:
                 [Camera: Movement: [static / zoom / pan / tilt / dolly / truck / crane / boom / tracking / handheld / gimbal]]
                 [Action: [human action - detailed gestures], Dialogue (Character Name & Lip-sync): [" (Vietnamese text) "]]
                 [Emotion: [emotion + facial expression]]
-                [Style: [Pixar-style 3D animation, cinematic, ultra-detailed, high quality, global illumination, soft shadows, volumetric light]] No Subtitle`
+                [Style: [Pixar-style 3D animation, cinematic, ultra-detailed, high quality]] No Subtitle`
         : `- "Tổng quan kịch bản:" Tóm tắt ngắn gọn cốt truyện.
            - "Bảng phân cảnh:" Trình bày dưới dạng bảng với 5 cột bắt buộc:
              1. "Số TT/Phân cảnh"
-             2. "Thời gian (8 giây)": mỗi cảnh 8 giây.
+             2. "Thời gian (5-8 giây)": mỗi phân cảnh có thời lượng từ 5 đến 8 giây.
              3. "Mô tả kịch bản chi tiết": mô tả [Bối cảnh & môi trường], [Khối Dữ liệu Nhân vật], [Cỡ cảnh, Góc máy & chuyển động], [Hành động/Biểu cảm], [Ánh sáng/Màu sắc], [Chất lượng kỹ thuật/Phong cách], [Lời dẫn truyện/Lời thoại của từng nhân vật].
              4. "Prompt tạo video (Veo 3.1)": Detailed descriptive English prompt. Structure:
                 [Scene: [describe scene], Environment: [location, time, lighting, weather]]
@@ -654,12 +645,13 @@ export default function App() {
                 Personality: [attributes],
                 Style: [3D Pixar style, high detail],
                 Voice: [attributes]]
-                -- Keep character design consistent throughout --
+                -- GIỮ NGUYÊN THIẾT KẾ NHÂN VẬT, KHÔNG THAY ĐỔI --
+                -- ĐỒNG NHẤT NHÂN VẬT: chèn đoạn mô tả nhân vật (Subject) vào tất cả các prompt của từng phân cảnh (Chỉ chèn đoạn mô tả đối với những nhân vật nào có trong phân cảnh) --
                 [Camera: Shot size: [EWS/WS/MS/CU/ECU], Angle: [angle types], Lens: [lens types], Focus: [focus types], Movement: [movement types]]
                 [Action: [detailed action], Dialogue (Character Name & Lip-sync): [" (Vietnamese text) "]]
                 [Emotion: [emotion + facial expression]]
                 [Style: [Pixar-style 3D animation, cinematic, high quality]] No Subtitle
-              5. "Prompt tạo video (JSON-Veo 3.1)": Identical content to the descriptive prompt above but formatted as a standard JSON object for Veo 3.1. Structure:
+             5. "Prompt tạo video (JSON-Veo 3.1)": Identical content to the descriptive prompt above but formatted as a standard JSON object for Veo 3.1. Structure:
                 [Scene: [describe scene], Environment: [location, time, lighting, weather]]
                 [Subject: (one or more characters),
                 Character: [Name, Gender, Age],
@@ -671,7 +663,8 @@ export default function App() {
                 Personality: [attributes],
                 Style: [3D Pixar style, high detail],
                 Voice: [attributes]]
-                -- Keep character design consistent throughout --
+                -- GIỮ NGUYÊN THIẾT KẾ NHÂN VẬT, KHÔNG THAY ĐỔI --
+                -- ĐỒNG NHẤT NHÂN VẬT: chèn đoạn mô tả nhân vật (Subject) vào tất cả các prompt của từng phân cảnh (Chỉ chèn đoạn mô tả đối với những nhân vật nào có trong phân cảnh) --
                 [Camera: Shot size: [EWS/WS/MS/CU/ECU], Angle: [angle types], Lens: [lens types], Focus: [focus types], Movement: [movement types]]
                 [Action: [detailed action], Dialogue (Character Name & Lip-sync): [" (Vietnamese text) "]]
                 [Emotion: [emotion + facial expression]]
@@ -683,24 +676,34 @@ export default function App() {
 
       const promptText = `
         You are an "AI Video Script and Prompt Expert". 
-        Task: Analyze the user's idea, ${numberOfScenes === 0 ? "determine the optimal number of scenes to cover the story appropriately (not too many, not too few)" : `divide it into exactly ${numberOfScenes} scenes`} of 8 seconds each.
+        Task: Analyze the user's idea, ${numberOfScenes === 0 ? "determine the optimal number of scenes to cover the story appropriately (not too many, not too few)" : `divide it into exactly ${numberOfScenes} scenes`} with each scene lasting between 5 to 8 seconds.
         
         Selected Style: ${promptStyle}
         Target Aspect Ratio: ${promptAspectRatio} (Full HD Quality 1080p)
         
         User Idea: ${userIdea}
         Number of Scenes: ${numberOfScenes === 0 ? "Auto (determined by AI)" : numberOfScenes}
-        Total Duration: ${numberOfScenes === 0 ? "Determined by AI" : `${numberOfScenes * 8}s`}
+        Total Duration: ${numberOfScenes === 0 ? "Determined by AI" : `Approx ${numberOfScenes * 6}s - ${numberOfScenes * 8}s`}
         Script Type: ${scriptType === 'Whisk' ? 'Image to Video (Whisk)' : 'Text to Video (Json)'}
         
         Rules:
-        - Each scene MUST be exactly 8 seconds.
+        - Each scene MUST be between 5 and 8 seconds.
         ${numberOfScenes === 0 ? `- The first scene MUST be an Extremely Wide Shot (EWS), Bird eye view angle, with Dolly movement (for the opening).
         - The last scene MUST be a Wide Shot (WS) for the ending.` : `- Total scenes MUST be exactly ${numberOfScenes}.`}
         - Overview summary in Vietnamese.
         - Storyboard scenes with "Mô tả kịch bản chi tiết" (Vietnamese) following the specific structure provided.
         - Visual prompts MUST strictly follow the selected style: ${promptStyle}.
-        - CHARACTER CONSISTENCY: For all prompts, the character description (Subject) MUST be detailed and identical across all scene prompts.
+        
+        - CHARACTER CONSISTENCY (IMPORTANT):
+          * --Giữ nguyên thiết kế nhân vật, không thay đổi--
+          * --Đồng nhất nhân vật: chèn đoạn mô tả nhân vật (Subject) vào tất cả các prompt của từng phân cảnh--
+          * Chèn đoạn mô tả (Subject) CHỈ đối với những nhân vật nào có trong phân cảnh.
+          * For all prompts, the character description (Subject) MUST be detailed and identical across all scenes where that character appears.
+        
+        - PROMPT GENERATION:
+          * If Script Type is 'Whisk': Generate "Prompt tạo ảnh (Whisk AI)" and "Prompt tạo chuyển động (Veo 3.1)" with detailed scene descriptions, character details, and camera motion.
+          * If Script Type is 'Json': Generate "Prompt tạo video (Veo 3.1)" (descriptive English text) and "Prompt tạo video (JSON-Veo 3.1)" (structured JSON format) specifically for Veo 3.1.
+          
         - DIALOGUE & LIP-SYNC: For each scene, you MUST include character dialogue in English prompts for "Prompt tạo chuyển động (Veo 3.1)", "Prompt tạo video (Veo 3.1)", and "Prompt tạo video (JSON-Veo 3.1)". Format: [Dialogue (Character Name): "Vietnamese dialogue text inside quotes"] and explicitly state that the character's lips must sync with the speech. The dialogue itself MUST be in Vietnamese.
         - NO SUBTITLE: You MUST add the phrase "No Subtitle" at the very end of every English prompt for "Prompt tạo chuyển động (Veo 3.1)", "Prompt tạo video (Veo 3.1)", and "Prompt tạo video (JSON-Veo 3.1)".
         ${promptInstructions}
@@ -711,7 +714,7 @@ export default function App() {
           "scenes": [
             {
               "id": 1,
-              "time": "8s",
+              "time": "5-8s",
               "description": "[Bối cảnh & môi trường]... [Khối Dữ liệu Nhân vật]... [Cỡ cảnh, Góc máy & chuyển động]... [Hành động/Biểu cảm]... [Ánh sáng/Màu sắc]... [Chất lượng kỹ thuật/Phong cách]",
               ${jsonFields}
             }
@@ -719,15 +722,19 @@ export default function App() {
         }
       `;
 
-      const result = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
-        contents: [{ parts: [{ text: promptText }] }],
-        config: {
-          responseMimeType: "application/json"
-        }
+      const response = await fetch("/api/generate-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ promptText }),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate prompt");
+      }
 
-      const text = result.text || "";
+      const data = await response.json();
+      const text = data.text || "";
       try {
         const parsed = JSON.parse(text);
         setGeneratedScript(parsed);
@@ -747,13 +754,7 @@ export default function App() {
       }
     } catch (err: any) {
       console.error("Prompt generation error:", err);
-      const errorMsg = err.message || '';
-      if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('API key not found') || errorMsg.includes('403') || errorMsg.includes('401')) {
-        setNeedsApiKey(true);
-        alert('API Key không hợp lệ hoặc đã hết hạn. Vui lòng chọn lại API Key từ dự án Google Cloud có trả phí để tiếp tục.');
-      } else {
-        alert("Lỗi khi tạo kịch bản: " + (err.message || "Dịch vụ hiện không khả dụng"));
-      }
+      alert("Lỗi khi tạo kịch bản: " + (err.message || "Dịch vụ hiện không khả dụng"));
     } finally {
       setIsProcessingPrompt(false);
     }
@@ -822,105 +823,76 @@ export default function App() {
   };
 
   const handleGenerate = async () => {
-    if (needsApiKey) {
-      alert('Vui lòng chọn API Key để tiếp tục sử dụng dịch vụ.');
-      await handleOpenApiKeyDialog();
-      return;
-    }
-
     setIsGenerating(true);
     
     try {
-      const ai = new GoogleGenAI({ apiKey: getEffectiveApiKey() });
-      
       const currentDims = getResolutionDisplay();
       
-      // Map simplified labels to actual Gemini Image models
       const modelMapping: { [key: string]: string } = {
-        'Nano Banana': 'gemini-3.1-flash-image-preview',
-        'Nano Banana 2': 'gemini-2.5-flash-image',
-        'Nano Banana Pro': 'gemini-3.1-pro-image-preview'
+        'Nano Banana': 'gemini-1.5-flash',
+        'Nano Banana 2': 'gemini-3-flash-preview',
+        'Nano Banana Pro': 'gemini-1.5-pro'
       };
       
-      const activeModel = modelMapping[imageModel] || 'gemini-3.1-flash-image-preview';
+      const activeModel = modelMapping[imageModel] || 'gemini-3-flash-preview';
       
       const fullPrompt = `${imagePrompt}. Style: ${selectedStyle}. Resolution: ${currentDims}.`;
-      const parts: any[] = [{ text: fullPrompt }];
+      const contentsParts: any[] = [{ text: fullPrompt }];
 
-      // Add character references
       characterImages.forEach((img, idx) => {
         if (img && selectedCharacters[idx]) {
-          parts.push({
+          contentsParts.push({
             inlineData: {
               data: img.split(',')[1],
               mimeType: 'image/png'
             }
           });
-          parts.push({ text: `This is reference image for Character ${idx + 1}. Ensure consistency.` });
+          contentsParts.push({ text: `This is reference image for Character ${idx + 1}. Ensure consistency.` });
         }
       });
 
-      // Add background reference
       if (backgroundImage && useBackground) {
-        parts.push({
+        contentsParts.push({
           inlineData: {
             data: backgroundImage.split(',')[1],
             mimeType: 'image/png'
           }
         });
-        parts.push({ text: "Use this as the background context. Keep the background consistent." });
+        contentsParts.push({ text: "Use this as the background context. Keep the background consistent." });
       }
 
-      // Generate multiple images based on resultCount
-      const generationPromises = Array.from({ length: resultCount }).map(() => 
-        ai.models.generateContent({
+      const response = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           model: activeModel,
-          contents: [{ parts }],
-          config: {
-            imageConfig: {
-              aspectRatio: aspectRatio as any,
-              imageSize: resolution === '4K' ? '4K' : (resolution === '1080p' || resolution === 'AUTO') ? '1K' : '512px'
-            }
-          }
+          contents: [{ parts: contentsParts }],
+          aspectRatio,
+          imageSize: resolution === '4K' ? '4K' : (resolution === '1080p' || resolution === 'AUTO') ? '1K' : '512px'
         })
-      );
-
-      const responses = await Promise.all(generationPromises);
-      const newImages: string[] = [];
-
-      responses.forEach(response => {
-        if (response.candidates?.[0]?.content?.parts) {
-          for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-              newImages.push(`data:image/png;base64,${part.inlineData.data}`);
-            }
-          }
-        }
       });
 
-      if (newImages.length === 0) {
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate image");
+      }
+
+      const data = await response.json();
+      if (!data.images || data.images.length === 0) {
         throw new Error("No images generated");
       }
 
-      setGeneratedImages(newImages);
+      setGeneratedImages(data.images);
     } catch (error: any) {
       console.error('Generation failed:', error);
+      alert("Lỗi khi tạo ảnh: " + (error.message || "Dịch vụ hiện không khả dụng"));
       
-      const errorMsg = error.message || '';
-      if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('API key not found') || errorMsg.includes('403') || errorMsg.includes('401')) {
-        setNeedsApiKey(true);
-        alert('API Key không hợp lệ hoặc đã hết hạn. Vui lòng chọn lại API Key từ dự án Google Cloud có trả phí để tiếp tục.');
-        return;
-      }
-      
-      // Dynamic dimensions for mock images
+      // Fallback to mock images on error if needed
       const resDisplay = getResolutionDisplay();
       const [w, h] = resDisplay.split('x');
-      
       const mockImages = Array.from({ length: resultCount }, (_, i) => 
         `https://picsum.photos/seed/${Math.random() + i}/${w}/${h}`
       );
-
       setGeneratedImages(mockImages);
     } finally {
       setIsGenerating(false);
@@ -1026,95 +998,85 @@ export default function App() {
       const job = videoJobs.find(j => j.id === jobId);
       if (!job) return;
 
-      const apiKey = getEffectiveApiKey();
-      const ai = new GoogleGenAI({ apiKey });
+      const activeModel = job.model.toLowerCase().includes('lite') ? 'veo-3.1-lite-generate-preview' : 'veo-3.1-generate-preview';
       
       const config: any = {
-        numberOfVideos: 1,
-        resolution: '1080p',
-        aspectRatio: job.aspectRatio
+          aspectRatio: job.aspectRatio,
+          outputCount: 1,
       };
 
-      const videoParams: any = {
-        model: job.model,
-        prompt: job.prompt,
-        config
-      };
-
-      // Handle Image or Frame input for Veo
+      let imageBase64: string | undefined;
       if ((job.inputType === 'image' || job.inputType === 'frame') && job.inputImage) {
-        // Detect MIME type from data URL
-        const match = job.inputImage.match(/^data:(image\/[a-z]+);base64,/);
-        const mimeType = match ? match[1] : 'image/png';
-        
-        videoParams.image = {
-          imageBytes: job.inputImage.split(',')[1],
-          mimeType: mimeType
-        };
+        imageBase64 = job.inputImage.split(',')[1];
       }
 
-      let operation = await ai.models.generateVideos(videoParams);
+      // 1. Start generation
+      const startRes = await fetch("/api/generate-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: activeModel,
+          prompt: job.prompt,
+          image: imageBase64 ? {
+            inlineData: {
+              data: imageBase64,
+              mimeType: "image/png"
+            }
+          } : undefined,
+          config
+        })
+      });
 
-      // Special handling for operation monitoring
-      if (!operation || !operation.name) {
-         throw new Error("Invalid API response: video generation operation failed to initialize");
+      if (!startRes.ok) {
+        const errData = await startRes.json();
+        throw new Error(errData.error || "Failed to start video generation");
       }
 
-      while (!operation.done) {
-        await new Promise(resolve => setTimeout(resolve, 10000));
-        const nextOp = await ai.operations.getVideosOperation({ operation: operation } as any);
-        if (!nextOp) {
-          throw new Error("Failed to poll operation status: no response from API");
-        }
-        operation = nextOp;
-      }
+      const { operationName } = await startRes.json();
 
-      const generatedVideo = operation.response?.generatedVideos?.[0]?.video;
-      if (generatedVideo?.uri) {
-        // Fetch the video with the API key header
-        const response = await fetch(generatedVideo.uri, {
-          method: 'GET',
-          headers: {
-            'x-goog-api-key': apiKey,
-          },
+      // 2. Poll for completion
+      let isDone = false;
+      let resultData: any = null;
+      while (!isDone) {
+        await new Promise(r => setTimeout(r, 10000)); // Poll every 10s
+        const statusRes = await fetch("/api/video-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ operationName })
         });
-        
-        if (!response.ok) {
-          const fetchErrorBody = await response.text().catch(() => '');
-          throw new Error(`Failed to fetch video content: ${response.statusText}${fetchErrorBody ? ' - ' + fetchErrorBody : ''}`);
-        }
-        
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
 
-        setVideoJobs(prev => prev.map(j => 
-          j.id === jobId ? { 
-            ...j, 
-            status: 'completed', 
-            resultUrl: blobUrl, 
-            completedAt: Date.now() 
-          } : j
-        ));
-      } else {
-        const opError = (operation as any).error;
-        let errorContext = "";
+        if (!statusRes.ok) throw new Error("Failed to check video status");
         
-        // Check for safety filter results which might cause missing video
-        const safetyResults = (operation.response?.generatedVideos?.[0]?.video as any)?.safetyFilterResults;
-        if (safetyResults) {
-          errorContext = " Potentially triggered safety filters.";
+        resultData = await statusRes.json();
+        if (resultData.done) {
+          if (resultData.error) throw new Error(resultData.error.message || "Video generation failed");
+          isDone = true;
         }
-
-        const errorMessage = opError?.message || (opError?.code ? `Error Code: ${opError.code}` : "Video generation failed without explicit error message from API.") + errorContext;
-        throw new Error(errorMessage);
       }
+
+      // 3. Download and set result
+      const downloadRes = await fetch("/api/video-download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ operationName })
+      });
+
+      if (!downloadRes.ok) throw new Error("Failed to download video");
+      
+      const blob = await downloadRes.blob();
+      const resultUrl = URL.createObjectURL(blob);
+
+      setVideoJobs(prev => prev.map(j => 
+        j.id === jobId ? { 
+          ...j, 
+          status: 'completed', 
+          resultUrl, 
+          completedAt: Date.now() 
+        } : j
+      ));
 
     } catch (error: any) {
       console.error(`Job ${jobId} failed:`, error);
-      const errorMsg = error.message || '';
-      if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('API key not found') || errorMsg.includes('403') || errorMsg.includes('401')) {
-        setNeedsApiKey(true);
-      }
       setVideoJobs(prev => prev.map(j => 
         j.id === jobId ? { 
           ...j, 
@@ -1189,61 +1151,36 @@ export default function App() {
     return { usd: usd.toFixed(4), vnd: Math.round(vnd).toLocaleString('vi-VN') };
   };
 
-  const callGeminiTtsApi = async (text: string, overrideVoice?: string, overrideStyle?: string, overrideRegion?: string) => {
-    const ai = new GoogleGenAI({ apiKey: getEffectiveApiKey() });
-    
-    // Choose voice, style and region
-    const activeVoice = overrideVoice || geminiVoice;
-    const activeStyle = overrideStyle || ttsStyle;
-    const activeRegion = overrideRegion || ttsRegion;
+  const callTtsServer = async (text: string, voice?: string, style?: string, region?: string) => {
+    const activeVoice = voice || geminiVoice;
+    const activeStyle = style || ttsStyle;
+    const activeRegion = region || ttsRegion;
 
-    // Tạo prompt mô tả giọng điệu vùng miền
     let regionPrompt = '';
-    if (activeRegion === 'Default') {
-      regionPrompt = 'Giọng đọc gốc, tự nhiên nhất của AI.';
-    } else if (activeRegion === 'North') {
-      regionPrompt = 'Giọng Hà Nội, miền Bắc Việt Nam chuẩn.';
-    } else if (activeRegion === 'Hue') {
-      regionPrompt = 'Giọng Huế, miền Trung Việt Nam đặc trưng.';
-    } else if (activeRegion === 'Central') {
-      regionPrompt = 'Giọng Bình Định và Phú Yên, miền Trung Việt Nam.';
-    } else if (activeRegion === 'South') {
-      regionPrompt = 'Giọng Cà Mau, miền Tây Nam Bộ Việt Nam.';
-    }
+    if (activeRegion === 'Default') regionPrompt = 'Giọng đọc gốc, tự nhiên nhất của AI.';
+    else if (activeRegion === 'North') regionPrompt = 'Giọng Hà Nội, miền Bắc Việt Nam chuẩn.';
+    else if (activeRegion === 'hue') regionPrompt = 'Giọng Huế, miền Trung Việt Nam đặc trưng.';
+    else if (activeRegion === 'central') regionPrompt = 'Giọng Bình Định và Phú Yên, miền Trung Việt Nam.';
+    else if (activeRegion === 'south') regionPrompt = 'Giọng Cà Mau, miền Tây Nam Bộ Việt Nam.';
 
     const speedText = ttsSpeed === 1 ? 'tốc độ bình thường' : `tốc độ ${ttsSpeed}x`;
     const pitchText = ttsPitch === 0 ? 'tông giọng trung bình' : `tông giọng (độ cao) ${ttsPitch > 0 ? '+' : ''}${ttsPitch}`;
     
-    const fullPrompt = `Hãy đóng vai là một người kể chuyện chuyên nghiệp. Đọc đoạn văn bản sau đây với các yêu cầu:
-- Giọng đọc: ${activeVoice}
-- Vùng miền/Accent: ${regionPrompt}
-- Phong cách/Cảm xúc: ${activeStyle}
-- ${speedText}
-- ${pitchText}
-- Cảm xúc: Diễn cảm, trôi chảy, đúng sắc thái ${activeStyle} và ngữ điệu ${activeRegion}.
+    const fullText = `Đọc đoạn văn bản sau với Giọng đọc: ${activeVoice}, Accent: ${regionPrompt}, Phong cách: ${activeStyle}, ${speedText}, ${pitchText}. Nội dung: "${text}"`;
 
-Nội dung văn bản:
-"${text}"`;
-
-    const response = await ai.models.generateContent({
-      model: ttsAiModel,
-      contents: [{ parts: [{ text: fullPrompt }] }],
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: activeVoice },
-          },
-        },
-      },
+    const res = await fetch("/api/generate-tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model: ttsAiModel, text: fullText, voiceName: activeVoice })
     });
-    
-    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    if (!base64Audio) {
-      throw new Error('AI không hỗ trợ hoặc gặp lỗi khi tạo âm thanh cho model này.');
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || "Failed to generate TTS");
     }
-    
-    return base64Audio;
+
+    const data = await res.json();
+    return data.audio; // base64
   };
 
   const createWavHeader = (pcmLength: number) => {
@@ -1280,12 +1217,6 @@ Nội dung văn bản:
       return;
     }
 
-    if (needsApiKey) {
-      alert('Vui lòng chọn API Key để tiếp tục sử dụng dịch vụ.');
-      await handleOpenApiKeyDialog();
-      return;
-    }
-
     setIsTtsProcessing(true);
     setTtsProgress(0);
     setTtsAudioUrl(null);
@@ -1298,21 +1229,17 @@ Nội dung văn bản:
         for (let i = 0; i < activeNodes.length; i++) {
           const node = activeNodes[i];
           setTtsProgress(Math.round((i / activeNodes.length) * 100));
-          
-          const base64 = await callGeminiTtsApi(node.text, node.speaker, node.style, node.region);
+          const base64 = await callTtsServer(node.text, node.speaker, node.style, node.region);
           const binaryString = window.atob(base64);
           const bytes = new Uint8Array(binaryString.length);
-          for (let j = 0; j < binaryString.length; j++) {
-            bytes[j] = binaryString.charCodeAt(j);
-          }
+          for (let j = 0; j < binaryString.length; j++) bytes[j] = binaryString.charCodeAt(j);
           audioContents.push(bytes);
         }
 
         const totalPcmLength = audioContents.reduce((acc, curr) => acc + curr.length, 0);
         const wavHeader = createWavHeader(totalPcmLength);
         const combinedBlob = new Blob([wavHeader, ...audioContents], { type: 'audio/wav' });
-        const url = URL.createObjectURL(combinedBlob);
-        setTtsAudioUrl(url);
+        setTtsAudioUrl(URL.createObjectURL(combinedBlob));
         setTtsProgress(100);
       } else {
         // Single Speaker Mode
@@ -1342,32 +1269,23 @@ Nội dung văn bản:
         const audioContents: Uint8Array[] = [];
         for (let i = 0; i < chunks.length; i++) {
             setTtsProgress(Math.round((i / chunks.length) * 100));
-            const base64 = await callGeminiTtsApi(chunks[i]);
+            const base64 = await callTtsServer(chunks[i]);
             
             const binaryString = window.atob(base64);
             const bytes = new Uint8Array(binaryString.length);
-            for (let j = 0; j < binaryString.length; j++) {
-              bytes[j] = binaryString.charCodeAt(j);
-            }
+            for (let j = 0; j < binaryString.length; j++) bytes[j] = binaryString.charCodeAt(j);
             audioContents.push(bytes);
         }
 
         const totalPcmLength = audioContents.reduce((acc, curr) => acc + curr.length, 0);
         const wavHeader = createWavHeader(totalPcmLength);
         const combinedBlob = new Blob([wavHeader, ...audioContents], { type: 'audio/wav' });
-        const url = URL.createObjectURL(combinedBlob);
-        setTtsAudioUrl(url);
+        setTtsAudioUrl(URL.createObjectURL(combinedBlob));
         setTtsProgress(100);
       }
     } catch (error: any) {
       console.error('TTS Conversion error:', error);
-      const errorMsg = error.message || '';
-      if (errorMsg.includes('API_KEY_INVALID') || errorMsg.includes('API key not found') || errorMsg.includes('403') || errorMsg.includes('401')) {
-        setNeedsApiKey(true);
-        alert('API Key không hợp lệ hoặc đã hết hạn. Vui lòng chọn lại API Key từ dự án Google Cloud có trả phí để tiếp tục.');
-      } else {
-        alert(`Lỗi chuyển đổi: ${error.message || 'Dịch vụ hiện không khả dụng'}`);
-      }
+      alert(`Lỗi chuyển đổi: ${error.message || 'Dịch vụ hiện không khả dụng'}`);
     } finally {
       setIsTtsProcessing(false);
     }
@@ -1388,7 +1306,7 @@ Nội dung văn bản:
       const regionPart = regionMap[ttsRegion] || ' tự nhiên';
       const previewText = `Đây là bản nghe thử cho giọng ${voiceName} với âm hưởng${regionPart} phong cách ${ttsStyle}.`;
       
-      const base64 = await callGeminiTtsApi(previewText);
+      const base64 = await callTtsServer(previewText);
       const binaryString = window.atob(base64);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
@@ -1517,7 +1435,7 @@ Nội dung văn bản:
   return (
     <div className="min-h-screen bg-main-bg text-text-primary selection:bg-accent selection:text-main-bg">
       {/* Header */}
-      <header className="sticky top-0 z-[100] w-full min-h-[150px] border-b border-border-subtle bg-secondary-bg/60 backdrop-blur-xl flex flex-col md:flex-row shadow-2xl">
+      <header className="sticky top-0 z-[100] w-full min-h-[150px] border-b border-border-subtle bg-secondary-bg/40 backdrop-blur-xl flex flex-col md:flex-row shadow-2xl">
         {/* Left Column (Logo Branding) */}
         <div className="min-w-[350px] min-h-[150px] h-auto border-r border-border-subtle bg-black/40 flex items-center justify-center px-4 overflow-hidden">
           <motion.div
