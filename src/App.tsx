@@ -685,19 +685,20 @@ export default function App() {
 
       const promptText = `
         You are an "AI Video Script and Prompt Expert". 
-        Task: Analyze the user's idea, ${numberOfScenes === 0 ? "determine the optimal number of scenes to cover the story appropriately (not too many, not too few)" : `divide it into exactly ${numberOfScenes} scenes`} with durations between 5 to 8 seconds each.
+        Task: Analyze the user's idea, ${numberOfScenes === 0 ? "create a comprehensive script with a detailed scene-by-scene breakdown, capturing every plot point and including full, natural dialogues between characters. Ensure the story is fully fleshed out with a robust number of scenes to cover the narrative completely." : `divide it into exactly ${numberOfScenes} scenes`} with durations between 5 to 8 seconds each.
         
         Selected Style: ${promptStyle}
         Target Aspect Ratio: ${promptAspectRatio} (Full HD Quality 1080p)
         
         User Idea: ${userIdea}
-        Number of Scenes: ${numberOfScenes === 0 ? "Auto (determined by AI)" : numberOfScenes}
-        Total Duration: ${numberOfScenes === 0 ? "Determined by AI" : `${numberOfScenes} scenes (5-8s each)`}
+        Number of Scenes: ${numberOfScenes === 0 ? "Auto (determined by AI - Full Detail Mode)" : numberOfScenes}
+        Total Duration: ${numberOfScenes === 0 ? "Determined by AI (Full narrative coverage)" : `${numberOfScenes} scenes (5-8s each)`}
         Script Type: ${scriptType === 'Whisk' ? 'Image to Video (Whisk)' : 'Text to Video (Json)'}
         
         Rules:
         - Each scene MUST be between 5 to 8 seconds.
-        ${numberOfScenes === 0 ? `- The first scene MUST be an Extremely Wide Shot (EWS), Bird eye view angle, with Dolly movement (for the opening).
+        ${numberOfScenes === 0 ? `- EXHAUSTIVE STORYBOARD: For 'Auto', you MUST generate a complete and detailed script. Do not skip any plot points. Include all necessary scenes to tell the full story with complete character dialogues.
+        - The first scene MUST be an Extremely Wide Shot (EWS), Bird eye view angle, with Dolly movement (for the opening).
         - The last scene MUST be a Wide Shot (WS) for the ending.` : `- Total scenes MUST be exactly ${numberOfScenes}.`}
         - Overview summary in Vietnamese.
         - Storyboard scenes with "Mô tả kịch bản chi tiết" (Vietnamese) following the specific structure provided.
