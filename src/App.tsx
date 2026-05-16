@@ -597,6 +597,30 @@ export default function App() {
     saveAs(blob, `${fileName}.doc`);
   };
 
+  const handleDownloadJson = () => {
+    if (!generatedScript || scriptType !== 'Json') return;
+
+    const jsonPrompts = generatedScript.scenes.map(scene => {
+      if (!scene.jsonVideoPrompt) return null;
+      try {
+        const trimmed = scene.jsonVideoPrompt.trim();
+        // If it looks like JSON, try to parse it
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+          return JSON.parse(trimmed);
+        }
+        return scene.jsonVideoPrompt;
+      } catch (e) {
+        return scene.jsonVideoPrompt;
+      }
+    }).filter(Boolean);
+
+    const blob = new Blob([JSON.stringify(jsonPrompts, null, 2)], { type: 'application/json' });
+    
+    const match = userIdea.match(/"([^"]+)"/);
+    const fileName = match ? match[1] : `Video_Script_${Date.now()}`;
+    saveAs(blob, `${fileName}.json`);
+  };
+
   const handlePromptGenerate = async () => {
     if (!userIdea.trim()) return;
     
@@ -1857,6 +1881,14 @@ Nội dung văn bản:
                                 >
                                   <Download size={14} /> Download Word (.doc)
                                 </button>
+                                {scriptType === 'Json' && (
+                                  <button 
+                                    onClick={handleDownloadJson}
+                                    className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-widest text-text-primary/60 hover:bg-accent/20 hover:border-accent hover:text-white transition-all"
+                                  >
+                                    <FileText size={14} /> Download JSON (.json)
+                                  </button>
+                                )}
                               </div>
                             </div>
                             <p className="text-sm text-text-primary/80 leading-relaxed italic">{generatedScript.overview}</p>
